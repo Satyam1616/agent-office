@@ -1,6 +1,8 @@
+import { Button, Select, Slider } from "@fluentui/react-components";
+import { History20Regular, Live20Regular, Pause20Filled, Play20Filled } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { replayCommand, setMode, useOffice } from "../store";
-import { control, muted, panel } from "./labels";
+import { muted, panel } from "./labels";
 
 const SPEEDS = [1, 10, 30, 120, 600];
 const RANGES: [string, number | "all"][] = [
@@ -10,8 +12,6 @@ const RANGES: [string, number | "all"][] = [
   ["24h", 24 * 60 * 60_000],
   ["All", "all"],
 ];
-
-const ON = "border-[#2f81f7] bg-[#2f81f7]";
 
 const clock = (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 const day = (t: number) => new Date(t).toLocaleDateString([], { day: "numeric", month: "short" });
@@ -30,62 +30,75 @@ export function Timeline() {
     const first = history?.first ?? last;
     replayCommand({ cmd: "load", from: span === "all" ? first : Math.max(first, last - span), to: last });
   };
+  const seek = () => {
+    if (drag !== null) replayCommand({ cmd: "seek", t: drag });
+    setDrag(null);
+  };
 
   return (
     <div
-      className={`${panel} bottom-3 left-1/2 flex max-w-[560px] -translate-x-1/2 flex-wrap items-center justify-center gap-2`}
+      className={`${panel} bottom-3 left-1/2 flex max-w-[600px] -translate-x-1/2 flex-wrap items-center justify-center gap-2`}
     >
-      <div className="flex gap-0.5">
-        <button className={`${control} ${mode === "live" ? ON : ""}`} onClick={() => setMode("live")}>
-          ● Live
-        </button>
-        <button className={`${control} ${mode === "replay" ? ON : ""}`} onClick={() => setMode("replay")}>
-          ⏪ Replay
-        </button>
+      <div className="flex gap-1">
+        <Button
+          size="small"
+          appearance={mode === "live" ? "primary" : "secondary"}
+          icon={<Live20Regular />}
+          onClick={() => setMode("live")}
+        >
+          Live
+        </Button>
+        <Button
+          size="small"
+          appearance={mode === "replay" ? "primary" : "secondary"}
+          icon={<History20Regular />}
+          onClick={() => setMode("replay")}
+        >
+          Replay
+        </Button>
       </div>
 
       {mode === "replay" && !replay && <span className={muted}>loading history…</span>}
       {mode === "replay" && replay && (
         <>
-          <button
-            className={`${control} w-8`}
+          <Button
+            size="small"
+            icon={replay.playing ? <Pause20Filled /> : <Play20Filled />}
             onClick={() => replayCommand({ cmd: replay.playing ? "pause" : "play" })}
-            title={replay.playing ? "Pause" : "Play"}
-          >
-            {replay.playing ? "⏸" : "▶"}
-          </button>
-          <input
-            type="range"
-            className="w-[200px] accent-[#2f81f7]"
-            min={replay.from}
-            max={Math.max(replay.to, replay.from + 1)}
-            value={drag ?? replay.vt}
-            onChange={(e) => setDrag(Number(e.target.value))}
-            onPointerUp={() => {
-              if (drag !== null) replayCommand({ cmd: "seek", t: drag });
-              setDrag(null);
-            }}
+            aria-label={replay.playing ? "Pause" : "Play"}
           />
+          {/* Seek once the drag ends (pointer or keyboard), not on every step. */}
+          <div onPointerUp={seek} onKeyUp={seek}>
+            <Slider
+              size="small"
+              className="w-[200px]"
+              min={replay.from}
+              max={Math.max(replay.to, replay.from + 1)}
+              step={1000}
+              value={drag ?? replay.vt}
+              onChange={(_, d) => setDrag(d.value)}
+            />
+          </div>
           <span className="min-w-16 font-mono text-xs" title={`${day(replay.from)} ${clock(replay.from)} → ${clock(replay.to)}`}>
             {clock(drag ?? replay.vt)}
           </span>
-          <select
-            className={control}
-            value={replay.speed}
-            onChange={(e) => replayCommand({ cmd: "speed", speed: Number(e.target.value) })}
-            title="Speed"
+          <Select
+            size="small"
+            value={String(replay.speed)}
+            onChange={(_, d) => replayCommand({ cmd: "speed", speed: Number(d.value) })}
+            aria-label="Speed"
           >
             {SPEEDS.map((s) => (
               <option key={s} value={s}>
                 {s}×
               </option>
             ))}
-          </select>
+          </Select>
           <div className="flex gap-0.5">
             {RANGES.map(([label, span]) => (
-              <button key={label} className={`${control} px-1.5 py-0.5 text-[11px]`} onClick={() => loadRange(span)}>
+              <Button key={label} size="small" appearance="subtle" className="!min-w-0 !px-1.5" onClick={() => loadRange(span)}>
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
           {replay.events === 0 && <span className={muted}>no recorded events in this range yet</span>}

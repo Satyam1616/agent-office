@@ -9,9 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fluentui/react-components": "^9.74.9",
+    "@fluentui/react-icons": "^2.0.344",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
     "@react-three/postprocessing": "^3.2.0",
+    "@tauri-apps/api": "^2.12.3",
+    "@tauri-apps/plugin-autostart": "^2.7.0",
+    "@tauri-apps/plugin-notification": "^2.6.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "three": "^0.186.1",

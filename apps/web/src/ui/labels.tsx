@@ -5,8 +5,6 @@ import type { SessionStatus } from "../agents";
 
 export const panel =
   "pointer-events-auto absolute rounded-[10px] border border-[#2a2f3a] bg-[#12151c]/80 px-3 py-2.5 backdrop-blur-md";
-export const control =
-  "cursor-pointer rounded-md border border-[#2a2f3a] bg-[#1b1f27] px-2 py-[3px] text-xs text-[#e6e9ef]";
 export const muted = "text-[#8b93a3]";
 export const fail = "text-[#ff8a8a]";
 export const mono = "font-mono text-xs";

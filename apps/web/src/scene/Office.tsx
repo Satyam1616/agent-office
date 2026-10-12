@@ -1,5 +1,6 @@
 import { useMemo, useRef } from "react";
-import { ACTIVITY_META, AGENT_META, AGENTS, clipText, type AgentKind, type SessionState } from "../agents";
+import { Ico, IdleIcon, SubagentIcon, WorkText } from "../ui/icons";
+import { AGENT_META, AGENTS, clipText, type AgentKind, type SessionState } from "../agents";
 import { useOffice } from "../store";
 import { Character } from "./Character";
 import { RobotCharacter } from "./RobotCharacter";
@@ -124,7 +125,6 @@ export function Office() {
 
             {!factory && subs.map((s) => {
               const seat = subSeat(room, slots.get(s.key)!);
-              const act = ACTIVITY_META[s.activity];
               return (
                 <group key={s.key}>
                   <Desk position={seat} activity={s.activity} status={s.status} chair={!robots} />
@@ -136,11 +136,9 @@ export function Office() {
                     pose={s.status === "idle" ? "idle" : s.activity}
                     waiting={s.status === "waiting"}
                     active={s.status !== "idle"}
-                    tag="🧑‍🔧 Subagent"
+                    tag={<><Ico icon={SubagentIcon} /> Subagent</>}
                     bubble={
-                      s.status === "idle"
-                        ? "💤 Zzz"
-                        : `${act.icon} ${s.tool ? `${s.tool} · ` : ""}${clipText(s.detail, 30) || act.label}`
+                      s.status === "idle" ? <><Ico icon={IdleIcon} /> Zzz</> : <WorkText session={s} max={30} />
                     }
                     bubbleStatus={s.status}
                     scale={0.8}

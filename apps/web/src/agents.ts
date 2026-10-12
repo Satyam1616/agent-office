@@ -13,20 +13,20 @@ export const AGENT_META: Record<AgentKind, { label: string; color: string }> = {
   opencode: { label: "OpenCode", color: "#f5c542" },
 };
 
-/** Icon, label and monitor glow per activity. */
-export const ACTIVITY_META: Record<Activity, { icon: string; label: string; screen: string }> = {
-  read: { icon: "📖", label: "reading", screen: "#e8e8e8" },
-  search: { icon: "🔍", label: "searching", screen: "#ffd166" },
-  write: { icon: "⌨️", label: "coding", screen: "#4cc9f0" },
-  shell: { icon: "🖥️", label: "terminal", screen: "#39ff88" },
-  web: { icon: "🌐", label: "browsing", screen: "#b388ff" },
-  think: { icon: "💭", label: "thinking", screen: "#7f8fa6" },
-  talk: { icon: "💬", label: "talking", screen: "#ffffff" },
-  plan: { icon: "📋", label: "planning", screen: "#ffb74d" },
-  delegate: { icon: "🧑‍🤝‍🧑", label: "delegating", screen: "#ff5ca8" },
-  wait: { icon: "⏳", label: "waiting for you", screen: "#ffcc00" },
-  idle: { icon: "💤", label: "idle", screen: "#1b1f27" },
-  other: { icon: "🔧", label: "using a tool", screen: "#90a4ae" },
+/** Label and monitor glow per activity (icons live in ui/icons.tsx). */
+export const ACTIVITY_META: Record<Activity, { label: string; screen: string }> = {
+  read: { label: "reading", screen: "#e8e8e8" },
+  search: { label: "searching", screen: "#ffd166" },
+  write: { label: "coding", screen: "#4cc9f0" },
+  shell: { label: "terminal", screen: "#39ff88" },
+  web: { label: "browsing", screen: "#b388ff" },
+  think: { label: "thinking", screen: "#7f8fa6" },
+  talk: { label: "talking", screen: "#ffffff" },
+  plan: { label: "planning", screen: "#ffb74d" },
+  delegate: { label: "delegating", screen: "#ff5ca8" },
+  wait: { label: "waiting for you", screen: "#ffcc00" },
+  idle: { label: "idle", screen: "#1b1f27" },
+  other: { label: "using a tool", screen: "#90a4ae" },
 };
 
 export const clipText = (s: string | undefined, max: number) =>

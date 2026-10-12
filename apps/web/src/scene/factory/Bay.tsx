@@ -4,6 +4,8 @@ import { Color } from "three";
 import { AGENT_META, type AgentKind, type SessionState } from "../../agents";
 import { door, ROOM_W, type RoomPlan } from "../layout";
 import { Dot, muted, RoomSign } from "../../ui/labels";
+import { Ico } from "../../ui/icons";
+import { Box20Regular } from "@fluentui/react-icons";
 
 const SAFETY = "#f2c230";
 
@@ -58,7 +60,13 @@ export function Bay({ agent, sessions, room }: { agent: AgentKind; sessions: Ses
             <Dot color={color} glow={lit} />
             <b>{label}</b>
             <span className={muted}>
-              {sessions.length ? `${running}/${sessions.length} lines running · 📦 ${parts}` : "line idle"}
+              {sessions.length ? (
+                <>
+                  {running}/{sessions.length} lines running · <Ico icon={Box20Regular} /> {parts}
+                </>
+              ) : (
+                "line idle"
+              )}
             </span>
           </RoomSign>
         </Html>

@@ -93,6 +93,9 @@ Linux. Install, open, done: no Bun required.
 - **Windows + WSL:** the Windows app automatically reads agent logs from your Windows home *and*
   from `/home/*` of every running WSL distro (via `\\wsl.localhost`). Stopped distros are left
   alone so they don't get booted. Override with the `AGENT_HOMES` env var (`;`-separated).
+- Closing the window keeps it running in the tray (right-click the tray icon to quit). Settings
+  (gear icon) has graphics quality, notifications when an agent finishes or waits for you,
+  close-to-tray and start at sign-in. Launching it a second time just brings the window back.
 - History is stored in the app's data folder (`%APPDATA%\dev.bimaadam.agentoffice` /
   `~/.local/share/dev.bimaadam.agentoffice`).
 

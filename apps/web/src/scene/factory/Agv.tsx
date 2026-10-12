@@ -2,7 +2,8 @@ import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { Group } from "three";
-import { ACTIVITY_META, AGENT_META, clipText, type SessionState } from "../../agents";
+import { AGENT_META, type SessionState } from "../../agents";
+import { AgvIcon, Ico, IdleIcon, WorkText } from "../../ui/icons";
 import { Bubble, LabelStack, Tag } from "../../ui/labels";
 import type { Vec3 } from "../layout";
 import { DARK } from "./machines";
@@ -18,7 +19,7 @@ interface Props {
   onSelect: () => void;
 }
 
-/** 🛻 A subagent: an AGV that drives in from the door and shuttles back and forth while working. */
+/** A subagent: an AGV that drives in from the door and shuttles back and forth while working. */
 export function Agv({ session, home, door, selected, onSelect }: Props) {
   const { color } = AGENT_META[session.agent];
   const root = useRef<Group>(null!);
@@ -47,10 +48,7 @@ export function Agv({ session, home, door, selected, onSelect }: Props) {
     lidar.current.rotation.y += dt * (working ? 8 : 0);
   });
 
-  const act = ACTIVITY_META[session.activity];
-  const bubble = working
-    ? `${act.icon} ${session.tool ? `${session.tool} · ` : ""}${clipText(session.detail, 28) || act.label}`
-    : "💤 parked";
+  const bubble = working ? <WorkText session={session} max={28} /> : <><Ico icon={IdleIcon} /> parked</>;
 
   return (
     <group
@@ -101,7 +99,9 @@ export function Agv({ session, home, door, selected, onSelect }: Props) {
           <Bubble color={color} status={session.status}>
             {bubble}
           </Bubble>
-          <Tag on={working}>🛻 AGV · subagent</Tag>
+          <Tag on={working}>
+            <Ico icon={AgvIcon} /> AGV · subagent
+          </Tag>
         </LabelStack>
       </Html>
     </group>

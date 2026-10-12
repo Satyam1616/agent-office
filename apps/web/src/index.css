@@ -4,3 +4,9 @@
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
+/* Fluent mounts popovers/dialogs in portal nodes that copy the provider's theme background;
+   keep them see-through so the scene stays visible behind dialogs. */
+.fui-FluentProvider[data-portal-node] {
+  background: transparent;
+}

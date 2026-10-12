@@ -1,9 +1,40 @@
+import {
+  Badge,
+  Button,
+  Menu,
+  MenuItemRadio,
+  MenuList,
+  MenuPopover,
+  MenuTrigger,
+  ToggleButton,
+  Tooltip,
+} from "@fluentui/react-components";
+import {
+  Box20Regular,
+  BuildingFactory20Regular,
+  Bot20Regular,
+  CheckmarkCircle20Regular,
+  Dismiss20Regular,
+  HourglassHalf20Regular,
+  Live20Regular,
+  People20Regular,
+  PersonChat20Regular,
+  Settings20Regular,
+  SettingsCogMultiple20Regular,
+  Speaker220Regular,
+  SpeakerMute20Regular,
+  Warning20Regular,
+  Wrench20Regular,
+  type FluentIcon,
+} from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { ACTIVITY_META, AGENT_META, AGENTS, clipText, type SessionState } from "../agents";
-import { ROLE_META, roleName, ROLES, roleFor, type Theme } from "../roles";
+import { ROLE_META, ROLES, roleFor, type Theme } from "../roles";
 import { sound } from "../sound";
 import { useClock, useMultiMachine, useOffice } from "../store";
-import { control, Dot, fail, MachineName, mono, muted, panel } from "./labels";
+import { ACTIVITY_ICON, AgvIcon, Ico, RoleLabel, SubagentIcon } from "./icons";
+import { Dot, fail, MachineName, mono, muted, panel } from "./labels";
+import { SettingsDialog } from "./Settings";
 import { Timeline } from "./Timeline";
 
 const timeAgo = (ts: number, now: number) => {
@@ -23,46 +54,69 @@ function useNow(ms = 1000) {
 const divider = "mt-1.5 grid grid-cols-2 gap-x-2 gap-y-1 border-t border-[#2a2f3a] pt-2 text-[11px]";
 const heading = "m-0 text-[13px] font-semibold";
 
+const THEME_OPTIONS: { value: Theme; label: string; icon: FluentIcon }[] = [
+  { value: "office", label: "Office", icon: People20Regular },
+  { value: "robots", label: "Robots", icon: Bot20Regular },
+  { value: "factory", label: "Factory", icon: BuildingFactory20Regular },
+];
+
 export function Hud() {
   const { connected, sessions, feed, stats, selected, select, theme, setTheme } = useOffice();
   const factory = theme === "factory";
   const now = useClock(useNow());
   const [soundOn, setSoundOn] = useState(sound.enabled);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => sound.onChange(() => setSoundOn(sound.enabled)), []);
   const multi = useMultiMachine();
   const list = Object.values(sessions);
   const sel = selected ? sessions[selected] : undefined;
+  const current = THEME_OPTIONS.find((t) => t.value === theme)!;
 
   return (
     // Above drei <Html> labels, which use z-index up to 20.
     <div className="pointer-events-none fixed inset-0 z-[100]">
-      <header className={`${panel} top-3 left-3 flex items-center gap-2.5`}>
-        <h1 className="m-0 text-[15px] font-semibold">Agent Office</h1>
-        <span
-          className={`rounded-full px-2 py-0.5 text-[11px] ${
-            connected ? "bg-[#10a37f]/20 text-[#39ff88]" : "bg-[#ff5c5c]/20 text-[#ff8a8a]"
-          }`}
-        >
+      <header className={`${panel} top-3 left-3 flex items-center gap-2`}>
+        <h1 className="m-0 mr-1 text-[15px] font-semibold">Agent Office</h1>
+        <Badge appearance="tint" color={connected ? "success" : "danger"} size="small">
           {connected ? "live" : "reconnecting…"}
-        </span>
-        <select className={control} value={theme} onChange={(e) => setTheme(e.target.value as Theme)} title="Visual">
-          <option value="office">👥 Office</option>
-          <option value="robots">🤖 Robots</option>
-          <option value="factory">🏭 Factory</option>
-        </select>
-        <button
-          className={control}
-          title={soundOn ? "Mute" : "Sound on"}
-          onClick={async () => {
-            if (soundOn) sound.disable();
-            else await sound.enable();
-          }}
+        </Badge>
+        <Menu
+          checkedValues={{ theme: [theme] }}
+          onCheckedValueChange={(_, d) => setTheme(d.checkedItems[0] as Theme)}
         >
-          {soundOn ? "🔊" : "🔇"}
-        </button>
+          <MenuTrigger disableButtonEnhancement>
+            <Button size="small" icon={<current.icon />}>
+              {current.label}
+            </Button>
+          </MenuTrigger>
+          <MenuPopover>
+            <MenuList>
+              {THEME_OPTIONS.map((t) => (
+                <MenuItemRadio key={t.value} name="theme" value={t.value} icon={<t.icon />}>
+                  {t.label}
+                </MenuItemRadio>
+              ))}
+            </MenuList>
+          </MenuPopover>
+        </Menu>
+        <Tooltip content={soundOn ? "Mute" : "Sound on"} relationship="label">
+          <ToggleButton
+            size="small"
+            checked={soundOn}
+            icon={soundOn ? <Speaker220Regular /> : <SpeakerMute20Regular />}
+            onClick={async () => {
+              if (soundOn) sound.disable();
+              else await sound.enable();
+            }}
+          />
+        </Tooltip>
+        <Tooltip content="Settings" relationship="label">
+          <Button size="small" icon={<Settings20Regular />} onClick={() => setSettingsOpen(true)} />
+        </Tooltip>
       </header>
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
-      <aside className={`${panel} top-[60px] left-3 grid w-[230px] gap-1.5`}>
+      <aside className={`${panel} top-[60px] left-3 grid w-[240px] gap-1.5`}>
         {AGENTS.map((a) => {
           const mine = list.filter((s) => s.agent === a);
           const working = mine.filter((s) => s.status !== "idle").length;
@@ -77,7 +131,7 @@ export function Hud() {
                 {working}/{mine.length}
               </span>
               <span className="tabular-nums text-[#9aa3b2]" title="tool calls today">
-                🔧 {stats.today[a] ?? 0}
+                <Ico icon={Wrench20Regular} /> {stats.today[a] ?? 0}
               </span>
             </div>
           );
@@ -85,9 +139,8 @@ export function Hud() {
         {factory && <Production list={list} />}
         <div className={divider}>
           {ROLES.map((r) => (
-            <span key={r}>
-              <span className="mr-1.5 inline-block size-2 rounded-xs" style={{ background: ROLE_META[r].accent }} />
-              {roleName(r, theme)}
+            <span key={r} className="whitespace-nowrap">
+              <RoleLabel role={r} theme={theme} accent={ROLE_META[r].accent} />
             </span>
           ))}
         </div>
@@ -109,13 +162,28 @@ export function Hud() {
                 {f.project}
               </span>
               <span className="overflow-hidden text-ellipsis">
-                {f.kind === "tool_start"
-                  ? `${roleName(roleFor({ activity: f.activity ?? "other", detail: f.detail }), theme, f.tool)} · ${f.tool} ${clipText(f.detail, 34)}`
-                  : f.kind === "prompt"
-                    ? `📝 ${clipText(f.detail, 50)}`
-                    : f.kind === "waiting"
-                      ? "⏳ waiting for you"
-                      : "✅ done"}
+                {f.kind === "tool_start" ? (
+                  <>
+                    <RoleLabel
+                      role={roleFor({ activity: f.activity ?? "other", detail: f.detail })}
+                      theme={theme}
+                      tool={f.tool}
+                    />{" "}
+                    · {f.tool} {clipText(f.detail, 34)}
+                  </>
+                ) : f.kind === "prompt" ? (
+                  <>
+                    <Ico icon={PersonChat20Regular} /> {clipText(f.detail, 50)}
+                  </>
+                ) : f.kind === "waiting" ? (
+                  <span className="text-[#ffdd55]">
+                    <Ico icon={HourglassHalf20Regular} /> waiting for you
+                  </span>
+                ) : (
+                  <span className="text-[#39ff88]">
+                    <Ico icon={CheckmarkCircle20Regular} /> done
+                  </span>
+                )}
               </span>
             </li>
           ))}
@@ -130,22 +198,39 @@ export function Hud() {
           className={`${panel} bottom-3 left-3 w-[380px] border-l-4`}
           style={{ borderLeftColor: AGENT_META[sel.agent].color }}
         >
-          <h2 className={heading}>
-            {AGENT_META[sel.agent].label} · {sel.project}
-          </h2>
+          <div className="flex items-start justify-between gap-2">
+            <h2 className={heading}>
+              {AGENT_META[sel.agent].label} · {sel.project}
+            </h2>
+            <Button
+              size="small"
+              appearance="subtle"
+              icon={<Dismiss20Regular />}
+              aria-label="Close"
+              onClick={() => select(null)}
+            />
+          </div>
           {sel.title && <p className="mt-1 mb-2 text-[#c3c9d4]">{sel.title}</p>}
           <dl className="mt-2 mb-0 grid grid-cols-[90px_1fr] gap-x-2.5 gap-y-1 [&_dd]:m-0 [&_dd]:break-words [&_dt]:text-[#8b93a3]">
             <dt>{sel.parentKey ? "Role" : "On it"}</dt>
             <dd>
-              {sel.parentKey
-                ? factory
-                  ? "🛻 AGV · subagent"
-                  : "🧑‍🔧 Subagent"
-                : roleName(roleFor(sel), theme, sel.tool)}
+              {sel.parentKey ? (
+                factory ? (
+                  <>
+                    <Ico icon={AgvIcon} /> AGV · subagent
+                  </>
+                ) : (
+                  <>
+                    <Ico icon={SubagentIcon} /> Subagent
+                  </>
+                )
+              ) : (
+                <RoleLabel role={roleFor(sel)} theme={theme} tool={sel.tool} />
+              )}
             </dd>
             <dt>Status</dt>
             <dd>
-              {ACTIVITY_META[sel.activity].icon} {sel.status} · {ACTIVITY_META[sel.activity].label}
+              <Ico icon={ACTIVITY_ICON[sel.activity]} /> {sel.status} · {ACTIVITY_META[sel.activity].label}
             </dd>
             {sel.tool && (
               <>
@@ -201,12 +286,18 @@ function Production({ list }: { list: SessionState[] }) {
   const running = list.filter((s) => s.status !== "idle").length;
   return (
     <div className={divider}>
-      <span title="completed turns">📦 {parts} parts</span>
-      <span title="tool calls">⚙️ {ops} ops</span>
-      <span title="failed tool calls" className={fails ? fail : ""}>
-        ⚠️ {ops ? Math.round((fails / ops) * 100) : 0}% fail
+      <span title="completed turns">
+        <Ico icon={Box20Regular} /> {parts} parts
       </span>
-      <span title="lines running">🟢 {running}/{list.length} lines</span>
+      <span title="tool calls">
+        <Ico icon={SettingsCogMultiple20Regular} /> {ops} ops
+      </span>
+      <span title="failed tool calls" className={fails ? fail : ""}>
+        <Ico icon={Warning20Regular} /> {ops ? Math.round((fails / ops) * 100) : 0}% fail
+      </span>
+      <span title="lines running">
+        <Ico icon={Live20Regular} /> {running}/{list.length} lines
+      </span>
     </div>
   );
 }

@@ -2,7 +2,8 @@ import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import type { Mesh } from "three";
-import { ACTIVITY_META, AGENT_META, clipText, type SessionState } from "../agents";
+import { AGENT_META, clipText, type SessionState } from "../agents";
+import { Ico, IdleIcon, RoleLabel, WorkText } from "../ui/icons";
 import { ROLE_META, ROLES, roleFor, type Role } from "../roles";
 import { useMultiMachine } from "../store";
 import { MachineName, muted, PodSign } from "../ui/labels";
@@ -75,8 +76,7 @@ export function TeamPod({ session, room, pod, door, selected, onSelect, robots }
     prev.current = current;
   }, [current, idle]);
 
-  const act = ACTIVITY_META[session.activity];
-  const workBubble = `${act.icon} ${session.tool ? `${session.tool} · ` : ""}${clipText(session.detail, 36) || act.label}`;
+  const workBubble = <WorkText session={session} max={36} />;
 
   return (
     <group>
@@ -99,8 +99,8 @@ export function TeamPod({ session, room, pod, door, selected, onSelect, robots }
               pose={idle ? "idle" : active ? session.activity : "standby"}
               waiting={active && session.status === "waiting"}
               active={active}
-              tag={`${meta.icon} ${meta.label}`}
-              bubble={active ? workBubble : idle && role === "lead" ? "💤 Zzz" : undefined}
+              tag={<RoleLabel role={role} theme="office" />}
+              bubble={active ? workBubble : idle && role === "lead" ? <><Ico icon={IdleIcon} /> Zzz</> : undefined}
               bubbleStatus={session.status}
               target={chair(seats[i]!)}
               door={door}

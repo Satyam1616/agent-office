@@ -2,7 +2,9 @@ import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, type ComponentType } from "react";
 import type { Group, Mesh } from "three";
-import { ACTIVITY_META, AGENT_META, clipText, type SessionState } from "../../agents";
+import { AGENT_META, clipText, type SessionState } from "../../agents";
+import { Ico, IdleIcon, RoleLabel, WorkText } from "../../ui/icons";
+import { Box20Regular } from "@fluentui/react-icons";
 import { CREATES_FILE, ROLE_META, ROLES, roleFor, type Role } from "../../roles";
 import { useMultiMachine } from "../../store";
 import { Bubble, LabelStack, MachineName, muted, PodSign, Tag } from "../../ui/labels";
@@ -85,8 +87,7 @@ export function ProductionCell({ session, room, pod, selected, onSelect }: Props
     p.rotation.y = Math.sin(clock.elapsedTime * 2) * 0.1;
   });
 
-  const act = ACTIVITY_META[session.activity];
-  const workBubble = `${act.icon} ${session.tool ? `${session.tool} · ` : ""}${clipText(session.detail, 34) || act.label}`;
+  const workBubble = <WorkText session={session} max={34} />;
   const parts = Math.min(session.turns, 8);
 
   return (
@@ -163,7 +164,9 @@ export function ProductionCell({ session, room, pod, selected, onSelect }: Props
           </mesh>
         ))}
         <Html position={[0, 0.9, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
-          <Tag on>📦 {session.turns}</Tag>
+          <Tag on>
+            <Ico icon={Box20Regular} /> {session.turns}
+          </Tag>
         </Html>
       </group>
 
@@ -191,11 +194,11 @@ export function ProductionCell({ session, room, pod, selected, onSelect }: Props
                 )}
                 {idle && role === "lead" && (
                   <Bubble color={meta.accent} status="idle">
-                    💤 line stopped
+                    <Ico icon={IdleIcon} /> line stopped
                   </Bubble>
                 )}
                 <Tag on={active}>
-                  {role === "coder" && printing.current ? "🖨️ 3D Printer" : `${meta.machineIcon} ${meta.machine}`}
+                  <RoleLabel role={role} theme="factory" tool={printing.current ? "write" : undefined} />
                 </Tag>
               </LabelStack>
             </Html>

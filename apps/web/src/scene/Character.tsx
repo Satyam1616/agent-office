@@ -1,6 +1,6 @@
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { MathUtils, type Group } from "three";
 import type { Activity, SessionStatus } from "../agents";
 import { Bubble, LabelStack, Tag } from "../ui/labels";
@@ -19,8 +19,8 @@ interface Props {
   accent: string;
   pose: Pose;
   waiting?: boolean;
-  tag?: string;
-  bubble?: string;
+  tag?: ReactNode;
+  bubble?: ReactNode;
   bubbleStatus?: SessionStatus;
   active?: boolean;
   scale?: number;

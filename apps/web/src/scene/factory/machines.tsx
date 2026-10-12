@@ -81,7 +81,7 @@ function Particles({
   );
 }
 
-/** 🦾 Lead: picks the workpiece and hands it to the next station. */
+/** Lead: picks the workpiece and hands it to the next station. */
 export function RobotArm({ active, on, accent, agentColor }: MachineProps) {
   const turret = useRef<Group>(null!);
   const upper = useRef<Group>(null!);
@@ -129,7 +129,7 @@ export function RobotArm({ active, on, accent, agentColor }: MachineProps) {
   );
 }
 
-/** 🔦 Reader: a gantry with a laser line sweeping over the part. */
+/** Reader: a gantry with a laser line sweeping over the part. */
 export function Scanner({ active, on, accent, agentColor }: MachineProps) {
   const head = useRef<Group>(null!);
   useFrame(({ clock }) => {
@@ -178,7 +178,7 @@ export function Scanner({ active, on, accent, agentColor }: MachineProps) {
   );
 }
 
-/** ⚙️ Coder: enclosed mill, spinning spindle and chips flying behind the glass. */
+/** Coder: enclosed mill, spinning spindle and chips flying behind the glass. */
 export function CncMill({ active, on, accent, agentColor }: MachineProps) {
   const spindle = useRef<Group>(null!);
   useFrame(({ clock }, dt) => {
@@ -237,7 +237,7 @@ export function CncMill({ active, on, accent, agentColor }: MachineProps) {
   );
 }
 
-/** ⚡ Bash: flatbed laser cutter with a moving gantry and sparks. */
+/** Bash: flatbed laser cutter with a moving gantry and sparks. */
 export function LaserCutter({ active, on, accent, agentColor }: MachineProps) {
   const bridge = useRef<Group>(null!);
   const head = useRef<Group>(null!);
@@ -292,7 +292,7 @@ export function LaserCutter({ active, on, accent, agentColor }: MachineProps) {
   );
 }
 
-/** 📡 Research: satellite dish pulling data in, crates on a loading dock. */
+/** Research: satellite dish pulling data in, crates on a loading dock. */
 export function DishDock({ active, on, accent, agentColor }: MachineProps) {
   const dish = useRef<Group>(null!);
   const ring = useRef<Mesh<any, MeshStandardMaterial>>(null!);
@@ -349,7 +349,7 @@ export function DishDock({ active, on, accent, agentColor }: MachineProps) {
   );
 }
 
-/** 🔬 Reviewer: coordinate measuring machine; the big lamp shows pass/fail. */
+/** Reviewer: coordinate measuring machine; the big lamp shows pass/fail. */
 export function QcStation({ active, on, accent, agentColor, lastOk }: MachineProps & { lastOk?: boolean }) {
   const probe = useRef<Group>(null!);
   useFrame(({ clock }) => {
@@ -428,7 +428,7 @@ export function AndonTower({ status, lastOk }: { status: "working" | "waiting" |
   );
 }
 
-/** 🖨️ Coder writing a brand-new file: the part grows layer by layer under a moving nozzle. */
+/** Coder writing a brand-new file: the part grows layer by layer under a moving nozzle. */
 export function Printer3D({ active, on, accent, agentColor }: MachineProps) {
   const head = useRef<Group>(null!);
   const part = useRef<Mesh>(null!);
