@@ -1,148 +1,156 @@
 # Agent Office
 
-Kantor virtual 3D yang nampilin semua coding agent di mesin ini lagi kerja, real-time.
-Tiap agent punya ruangan sendiri, tiap sesi jadi satu karakter di meja. Animasi, layar
-monitor, dan bubble di atas kepala ngikutin apa yang lagi dikerjain (baca file, ngoding,
-terminal, browsing, planning, delegasi ke subagent, nunggu izin, idle).
+A 3D virtual office that shows every coding agent on your machine at work, in real time.
+Each agent gets its own room and each session becomes a character at a desk. Animations,
+monitor screens and speech bubbles follow what the agent is doing: reading files, coding,
+running commands, browsing, planning, delegating to subagents, waiting for you, or idling.
 
-## Tim per sesi
+**Download:** grab the installer for Windows (`.exe` / `.msi`) or Linux (`.deb` / `.rpm` /
+`.AppImage`) from [Releases](https://github.com/bimaadam/agent-office/releases).
 
-Tiap sesi tampil sebagai satu pod isi 6 karakter. Tiap tool call dikerjain karakter yang
-sesuai rolenya, dan kalau kerjaan pindah role ada kertas yang terbang ke meja berikutnya:
+## A team per session
 
-| Role        | Ngerjain                                                        |
+Each session shows up as a pod of 6 characters. Every tool call is handled by the character
+whose role fits it, and when work moves to another role a sheet of paper flies to that desk:
+
+| Role        | Handles                                                         |
 | ----------- | --------------------------------------------------------------- |
-| 📋 Lead     | mikir, ngobrol, planning, delegasi, nunggu kamu                 |
-| 📖 Reader   | baca file, grep/glob                                            |
+| 📋 Lead     | thinking, chatting, planning, delegating, waiting for you       |
+| 📖 Reader   | reading files, grep/glob                                        |
 | ⌨️ Coder    | edit / write / patch                                            |
-| 🖥️ Bash     | command terminal                                                |
+| 🖥️ Bash     | terminal commands                                               |
 | 🌐 Research | web search / fetch                                              |
-| 🔍 Reviewer | command verifikasi: test, lint, tsc, git diff, audit…           |
+| 🔍 Reviewer | verification commands: test, lint, tsc, git diff, audit…        |
 
-Role ini cuma visual, ditentuin dari tool call di `apps/web/src/roles.ts`.
-Subagent asli duduk sendiri di baris depan ruangan.
+Roles are purely visual and derived from tool calls in `apps/web/src/roles.ts`.
+Real subagents sit on their own in the front row of the room.
 
-## Tiga visual: kantor, robot, atau pabrik
+## Three looks: office, robots, or factory
 
-Pilih lewat dropdown di pojok kiri atas (atau `?theme=office|robots|factory`); pilihan diinget browser.
+Pick one from the dropdown in the top-left corner (or `?theme=office|robots|factory`); the
+browser remembers your choice.
 
-- **👥 Office**: tiap sesi satu tim 6 orang di meja.
-- **🤖 Robots**: sama, tapi orangnya robot 3D beranimasi (warna badan = warna agent).
-  Ngoding/terminal = Punch, baca = Yes, nyari = No, ngobrol = Wave, nunggu kamu = Jump,
-  idle = duduk. Turn selesai: satu tim ThumbsUp; tool gagal: geleng kepala.
-- **🏭 Factory**: tiap sesi satu production cell. File yang dikerjain jadi benda kerja di
-  conveyor, pindah dari mesin ke mesin:
+- **👥 Office**: each session is a team of 6 people at desks.
+- **🤖 Robots**: same, but with animated 3D robots (body color = agent color).
+  Coding/terminal = Punch, reading = Yes, searching = No, chatting = Wave, waiting for you =
+  Jump, idle = sitting. A finished turn makes the team give a ThumbsUp; a failed tool makes
+  them shake their heads.
+- **🏭 Factory**: each session is a production cell. The files being worked on become
+  workpieces on a conveyor, moving from machine to machine:
 
-| Role     | Mesin           | Animasi                                         |
+| Role     | Machine         | Animation                                       |
 | -------- | --------------- | ----------------------------------------------- |
-| Lead     | 🦾 Robot Arm    | lengan muter ngoper benda kerja                 |
-| Reader   | 🔦 3D Scanner   | sinar laser nyapu benda kerja                   |
-| Coder    | ⚙️ CNC Mill     | spindle muter, serpihan logam muncrat (edit)    |
-|          | 🖨️ 3D Printer   | benda tumbuh lapis demi lapis (file baru)       |
-| Bash     | ⚡ Laser Cutter | gantry gerak, sinar hijau, percikan             |
-| Research | 📡 Dish & Dock  | parabola muter, gelombang sinyal                |
-| Reviewer | 🔬 QC / CMM     | probe ngecek; lampu 🟢 lolos / 🔴 gagal          |
-| Subagent | 🛻 AGV          | robot pengangkut bolak-balik                    |
+| Lead     | 🦾 Robot Arm    | arm swings to hand off the workpiece            |
+| Reader   | 🔦 3D Scanner   | laser beam sweeps the workpiece                 |
+| Coder    | ⚙️ CNC Mill     | spindle spins, metal chips fly (edits)          |
+|          | 🖨️ 3D Printer   | part grows layer by layer (new files)           |
+| Bash     | ⚡ Laser Cutter | gantry moves, green beam, sparks                |
+| Research | 📡 Dish & Dock  | dish rotates, signal waves                      |
+| Reviewer | 🔬 QC / CMM     | probe checks; 🟢 pass / 🔴 fail lamp            |
+| Subagent | 🛻 AGV          | transport robot shuttling back and forth        |
 
-Lampu andon per cell: 🟢 jalan, 🟡 kedip = nunggu kamu, 🔴 tool terakhir gagal.
-Keranjang 📦 ngitung turn yang selesai. Panel kiri nampilin parts, ops, dan fail rate.
-Gagal/lolos dibaca dari log tiap agent (`is_error`, exit code, `status: error`, dst).
+Andon lamp per cell: 🟢 running, 🟡 blinking = waiting for you, 🔴 last tool failed.
+The 📦 bin counts finished turns. The left panel shows parts, ops and fail rate.
+Pass/fail comes from each agent's log (`is_error`, exit codes, `status: error`, etc).
 
-## Suara
+## Sound
 
-Tombol 🔇/🔊 di sebelah dropdown. Mesin di pabrik pakai **rekaman asli** (CC0 dari Freesound,
-lihat `apps/web/public/sounds/README.md`): ⚙️ CNC mill waktu agent ngedit file, 🖨️ motor stepper
-waktu bikin file baru, ⚡ laser cutter waktu jalanin command. Sisanya disintesis Web Audio:
-gemuruh conveyor, ketikan keyboard di kantor, "ding" waktu turn selesai, buzzer waktu tool gagal,
-alarm waktu agent nunggu kamu, dan chime waktu sesi baru masuk.
+Use the 🔇/🔊 button next to the dropdown. Factory machines use **real recordings** (CC0 from
+Freesound, see `apps/web/public/sounds/README.md`): ⚙️ CNC mill while an agent edits a file,
+🖨️ stepper motors while it creates a new file, ⚡ laser cutter while it runs a command. The rest
+is synthesized with Web Audio: conveyor rumble, keyboard typing in the office, a "ding" when a
+turn finishes, a buzzer when a tool fails, an alarm when an agent is waiting for you, and a chime
+when a new session arrives.
 
 ## Replay
 
-Tombol **⏪ Replay** di bawah (atau `?mode=replay`). Collector nyimpen semua event live ke
-SQLite (`apps/collector/agent-office.db`); replay muter ulang pakai reducer yang sama di jam
-virtual, khusus buat penonton itu (penonton live gak keganggu). Pilih rentang 15m/1h/6h/24h/All,
-play/pause, speed 1×–600×, geser slider buat lompat. History baru keisi sejak collector versi
-ini jalan.
+Hit **⏪ Replay** at the bottom (or `?mode=replay`). The collector stores every live event in
+SQLite (`apps/collector/agent-office.db`); replay runs them back through the same reducer on a
+virtual clock, just for that viewer (live viewers are unaffected). Choose a range of
+15m/1h/6h/24h/All, play/pause, speed 1×–600×, and drag the slider to jump. History only
+starts from the first time this collector version runs.
 
-## Jalanin
+## Running from source
 
 ```bash
 bun install
-bun run dev        # collector :4747 + web :5173 → buka http://127.0.0.1:5173
-bun run dev:demo   # data palsu buat semua agent, enak buat liat-liat
+bun run dev        # collector :4747 + web :5173 → open http://127.0.0.1:5173
+bun run dev:demo   # fake data for every agent, handy for looking around
 ```
 
-`?zoom=40` di URL buat ngatur zoom awal. Klik karakter buat liat detail sesinya.
+Add `?zoom=40` to the URL to set the initial zoom. Click a character to see its session details.
 
-## Aplikasi desktop (Windows & Linux)
+## Desktop app (Windows & Linux)
 
-Installer ada di halaman Releases: `.exe`/`.msi` buat Windows, `.deb`/`.rpm`/`.AppImage` buat Linux.
-Install, buka, langsung jalan, gak perlu Bun.
+Installers are on the Releases page: `.exe`/`.msi` for Windows, `.deb`/`.rpm`/`.AppImage` for
+Linux. Install, open, done: no Bun required.
 
-- Dibikin pakai [Tauri](https://tauri.app): pakai webview bawaan OS (WebView2 / WebKitGTK), jadi
-  gak bawa Chromium sendiri kayak Electron. Collector-nya di-compile jadi satu binary (`bun build
-  --compile`) yang jalan di background, ±30MB RAM.
-- Kalau udah ada collector jalan di port 4747 (misal `bun run dev` di WSL), app-nya langsung
-  pakai itu dan gak nyalain collector sendiri.
-- **Windows + WSL:** app Windows otomatis baca log agent di home Windows *dan* di `/home/*`
-  tiap distro WSL yang lagi jalan (lewat `\\wsl.localhost`). Distro yang mati gak disentuh biar
-  gak kebangun sendiri. Override pakai env `AGENT_HOMES` (dipisah `;`).
-- History disimpen di folder data app (`%APPDATA%\dev.bimaadam.agentoffice` /
+- Built with [Tauri](https://tauri.app): it uses the OS's own webview (WebView2 / WebKitGTK)
+  instead of shipping Chromium like Electron. The collector is compiled into a single binary
+  (`bun build --compile`) that runs in the background using about 30MB of RAM.
+- If a collector is already running on port 4747 (e.g. `bun run dev` inside WSL), the app uses
+  it instead of starting its own.
+- **Windows + WSL:** the Windows app automatically reads agent logs from your Windows home *and*
+  from `/home/*` of every running WSL distro (via `\\wsl.localhost`). Stopped distros are left
+  alone so they don't get booted. Override with the `AGENT_HOMES` env var (`;`-separated).
+- History is stored in the app's data folder (`%APPDATA%\dev.bimaadam.agentoffice` /
   `~/.local/share/dev.bimaadam.agentoffice`).
 
-Build sendiri:
+Build it yourself:
 
 ```bash
-bun run app:build   # butuh Rust + (Linux) libwebkit2gtk-4.1-dev, hasilnya di apps/desktop/src-tauri/target/release/bundle
+bun run app:build   # needs Rust + (Linux) libwebkit2gtk-4.1-dev; output in apps/desktop/src-tauri/target/release/bundle
 ```
 
-Atau push tag `v*` (misal `git tag v0.1.0 && git push --tags`): GitHub Actions nge-build installer
-Windows + Linux dan naruh di draft release.
+Or push a `v*` tag (e.g. `git tag v0.1.0 && git push --tags`): GitHub Actions builds the Windows
+and Linux installers and attaches them to a draft release.
 
-## Dari laptop lain
+## Watching from another machine
 
-Real-time, delay sekitar 1 detik. Default-nya server cuma bisa dibuka dari mesin ini sendiri.
-Buat lintas mesin, pakai Tailscale biar gak perlu buka port ke internet.
+Real-time, with about a second of delay. By default the server is only reachable from the
+machine itself. To go across machines, use Tailscale so you don't have to open ports to the
+internet.
 
-**1. Jadiin mesin ini hub** (web + collector di satu port, wajib pakai token):
+**1. Make this machine the hub** (web + collector on one port, token required):
 
 ```bash
-export TOKEN=$(openssl rand -hex 16)   # simpen, dipakai viewer & relay
-HOST=$(tailscale ip -4) bun run start  # build web, lalu serve di :4747
+export TOKEN=$(openssl rand -hex 16)   # keep it, viewers and relays need it
+HOST=$(tailscale ip -4) bun run start  # builds the web app, then serves it on :4747
 ```
 
-**2. Nonton dari device lain di tailnet:** buka `http://<ip-tailscale-hub>:4747/?token=<TOKEN>`.
-Token-nya diinget browser, jadi berikutnya cukup buka URL tanpa `?token`.
+**2. Watch from another device on your tailnet:** open `http://<hub-tailscale-ip>:4747/?token=<TOKEN>`.
+The browser remembers the token, so next time the plain URL is enough.
 
-**3. Agent di laptop lain ikut masuk kantor:** di laptop itu, clone repo ini terus jalanin:
+**3. Bring agents from another laptop into the office:** on that laptop, clone this repo and run:
 
 ```bash
 bun install
-TOKEN=<TOKEN> RELAY_TO=http://<ip-tailscale-hub>:4747 bun run relay
+TOKEN=<TOKEN> RELAY_TO=http://<hub-tailscale-ip>:4747 bun run relay
 ```
 
-Relay ngebaca log agent di laptop itu terus ngirim event-nya ke hub. Tiap pod dapet label
-`@nama-mesin` (bisa diganti pakai `MACHINE=nama`). Kalau hub restart, relay nyambung lagi
-sendiri dan ngirim ulang status terakhir.
+The relay reads the agent logs on that laptop and sends the events to the hub. Each pod gets an
+`@machine-name` label (change it with `MACHINE=name`). If the hub restarts, the relay reconnects
+on its own and resends the latest state.
 
-Catatan:
-- Server nolak jalan di alamat selain localhost kalau `TOKEN` belum di-set (minimal 16 karakter).
-- WSL2 mode NAT gak bisa diakses dari LAN secara langsung. Tailscale di dalam WSL
-  (`tailscale ip -4`) ngelewatin masalah itu.
-- Lalu lintasnya HTTP biasa, jadi aman kalau lewat Tailscale (udah terenkripsi WireGuard).
-  Jangan diekspos ke internet publik tanpa HTTPS.
+Notes:
+- The server refuses to listen on anything other than localhost unless `TOKEN` is set (at least
+  16 characters).
+- WSL2 in NAT mode isn't reachable from the LAN directly. Running Tailscale inside WSL
+  (`tailscale ip -4`) gets around that.
+- Traffic is plain HTTP, which is fine over Tailscale (already encrypted with WireGuard).
+  Don't expose it to the public internet without HTTPS.
 
-## Cara kerja
+## How it works
 
 ```
-log sesi tiap agent ──► apps/collector (Bun) ──WebSocket──► apps/web (React Three Fiber)
-                         adapter → event standar → state per sesi (+ SQLite buat statistik)
+each agent's session logs ──► apps/collector (Bun) ──WebSocket──► apps/web (React Three Fiber)
+                               adapter → common event → per-session state (+ SQLite for stats)
 ```
 
-Collector cuma **membaca** log yang udah ditulis tiap agent; gak ada config agent yang diubah.
-Server cuma listen di `127.0.0.1` karena log berisi prompt dan kode.
+The collector only **reads** the logs each agent already writes; no agent config is changed.
+The server listens on `127.0.0.1` only, because the logs contain prompts and code.
 
-| Agent       | Sumber                                              | Adapter                         |
+| Agent       | Source                                              | Adapter                         |
 | ----------- | --------------------------------------------------- | ------------------------------- |
 | Claude Code | `~/.claude/projects/**/*.jsonl`                     | `adapters/claude.ts`            |
 | Codex       | `~/.codex/sessions/**/rollout-*.jsonl`              | `adapters/codex.ts`             |
@@ -152,27 +160,29 @@ Server cuma listen di `127.0.0.1` karena log berisi prompt dan kode.
 | Kiro CLI    | `~/.kiro/sessions/cli/*.jsonl` (+ `.json` metadata) | `adapters/kiro.ts`              |
 | OpenCode    | `~/.local/share/opencode/opencode.db` (SQLite)      | `adapters/opencode.ts`          |
 
-Nambah agent baru: bikin `JsonlAdapter` yang ngubah satu baris log jadi `AgentEvent[]`
-(lihat `types.ts`), daftarin di `index.ts`, tambahin warna di `apps/web/src/agents.ts`.
-Mapping nama tool → animasi ada di `classify.ts`.
+Adding a new agent: write a `JsonlAdapter` that turns one log line into `AgentEvent[]` (see
+`types.ts`), register it in `index.ts`, and add a color in `apps/web/src/agents.ts`. The tool
+name → animation mapping lives in `classify.ts`.
 
-Sesi yang diem 3 menit jadi idle (💤), 20 menit keluar dari kantor.
+Sessions quiet for 3 minutes go idle (💤); after 20 minutes they leave the office.
 
-## Kredit
+## Credits
 
-Model robot: `RobotExpressive` oleh Tomás Laulhé (Quaternius), CC0 1.0, lewat contoh three.js
+Robot model: `RobotExpressive` by Tomás Laulhé (Quaternius), CC0 1.0, via the three.js examples
 (`apps/web/public/models/robot/README.md`).
 
-Suara mesin: rekaman CC0 dari Freesound oleh soundsofscienceupf, SoundsofTheMachine, dan
+Machine sounds: CC0 recordings from Freesound by soundsofscienceupf, SoundsofTheMachine and
 squashy555 (`apps/web/public/sounds/README.md`).
 
-## Batasan
+## Limitations
 
-- Format log ini internal dan bisa berubah tiap update agent; adapter bakal perlu disesuaikan.
-- Gemini cuma nulis chat log kalau sesinya disimpen; Kiro IDE (Windows) gak kebaca dari WSL,
-  cuma kiro-cli.
-- OpenCode di dalam WSL kebaca dari app Windows dengan telat: SQLite gak bisa nge-lock lewat
-  `\\wsl.localhost`, jadi DB-nya dibaca tanpa file WAL dan update baru muncul setelah checkpoint.
-  Kalau mau real-time, jalanin collector di WSL (`bun run start`), app Windows otomatis pakai itu.
-- Installer belum di-sign: Windows SmartScreen bakal nanya dulu ("More info → Run anyway").
-- Status "nunggu izin" cuma kedeteksi di agent yang nulisnya ke log (Codex, Copilot).
+- These log formats are internal and can change with any agent update; adapters may need
+  adjusting.
+- Gemini only writes chat logs for saved sessions. Kiro IDE (Windows) isn't read from WSL, only
+  kiro-cli.
+- OpenCode inside WSL shows up late in the Windows app: SQLite can't lock across
+  `\\wsl.localhost`, so the database is read without its WAL file and new updates only appear
+  after a checkpoint. For real-time updates, run the collector inside WSL (`bun run start`) and
+  the Windows app will use it automatically.
+- Installers aren't signed yet, so Windows SmartScreen will ask first ("More info → Run anyway").
+- The "waiting for permission" state is only detected for agents that log it (Codex, Copilot).
