@@ -5,8 +5,8 @@ Each agent gets its own room and each session becomes a character at a desk. Ani
 monitor screens and speech bubbles follow what the agent is doing: reading files, coding,
 running commands, browsing, planning, delegating to subagents, waiting for you, or idling.
 
-**Download:** grab the installer for Windows (`.exe` / `.msi`) or Linux (`.deb` / `.rpm` /
-`.AppImage`) from [Releases](https://github.com/bimaadam/agent-office/releases).
+**Download:** grab the installer for Windows (`.exe` / `.msi`), Linux (`.deb` / `.rpm` /
+`.AppImage`) or Android (`.apk`) from [Releases](https://github.com/bimaadam/agent-office/releases).
 
 ## A team per session
 
@@ -105,8 +105,39 @@ Build it yourself:
 bun run app:build   # needs Rust + (Linux) libwebkit2gtk-4.1-dev; output in apps/desktop/src-tauri/target/release/bundle
 ```
 
-Or push a `v*` tag (e.g. `git tag v0.1.0 && git push --tags`): GitHub Actions builds the Windows
-and Linux installers and attaches them to a draft release.
+Or push a `v*` tag (e.g. `git tag v0.1.0 && git push --tags`): GitHub Actions builds the Windows,
+Linux and Android installers and attaches them to a draft release.
+
+## All your devices in one office (Tailscale)
+
+Turn on **Settings → Your devices → Share with my devices** on each computer. Every computer
+signed in to your Tailscale account that also runs Agent Office then shows up in every other
+one's office, labelled `@machine`. No hub, no token, no login: Tailscale already knows which
+devices are yours, so a connection is let in only if it comes from a device signed in as the
+same Tailscale user. Devices of people you share your tailnet with, and tagged servers, stay out.
+
+- Each device only shares its own sessions, so nothing is counted twice. A WSL collector and the
+  Windows app on the same PC report the same sessions, which are merged.
+- Settings lists your devices and whether each one is connected.
+- Off by default. Plain LAN without Tailscale isn't supported (anyone on that Wi-Fi could read
+  your prompts).
+- Windows asks once whether Agent Office may accept connections; allow it for private networks.
+- Replay and the tool-call counters still cover this computer only.
+
+## Android
+
+The Android app is a viewer: install the `.apk`, turn on sharing on a computer (above), then scan
+the QR code shown under **Settings → Phone**, or paste its link. The app reopens the last
+computer automatically; **Settings → Change hub** goes back to the connect screen. Phones use
+the light "Power saver" graphics and a compact layout where Agents and Live feed open as panels.
+
+You can also skip the app: phones on your Tailscale account can open `http://<computer>:4747`
+in the browser (or scan the QR code with the camera).
+
+The phone needs Tailscale too. Notifications only arrive while the app is open.
+
+Build it yourself with the Android SDK + NDK: `cd apps/mobile && bun run apk` (signing reads
+`ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD` and `ANDROID_KEY_ALIAS`).
 
 ## Watching from another machine
 

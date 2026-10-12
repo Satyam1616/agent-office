@@ -7,7 +7,8 @@ import { QUALITY, useSettings } from "./settings";
 import { Hud } from "./ui/Hud";
 import { useOffice } from "./store";
 
-const ZOOM = Number(new URLSearchParams(location.search).get("zoom")) || 17;
+// Narrow (phone) screens start further out so the whole office fits.
+const ZOOM = Number(new URLSearchParams(location.search).get("zoom")) || (innerWidth < 768 ? 9 : 17);
 // Below this zoom, idle teammates' role tags are hidden (the `[.far_&]:hidden` variant on <Tag>).
 const TAG_ZOOM = 30;
 const markFar = (zoom: number) => document.body.classList.toggle("far", zoom < TAG_ZOOM);

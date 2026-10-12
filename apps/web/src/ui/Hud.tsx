@@ -20,6 +20,8 @@ import {
   People20Regular,
   PersonChat20Regular,
   Settings20Regular,
+  PeopleList20Regular,
+  TextBulletListLtr20Regular,
   SettingsCogMultiple20Regular,
   Speaker220Regular,
   SpeakerMute20Regular,
@@ -66,6 +68,9 @@ export function Hud() {
   const now = useClock(useNow());
   const [soundOn, setSoundOn] = useState(sound.enabled);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Phones: the side panels don't fit next to the scene, so they open one at a time.
+  const [sheet, setSheet] = useState<"agents" | "feed" | null>(null);
+  const toggleSheet = (s: "agents" | "feed") => setSheet((cur) => (cur === s ? null : s));
   useEffect(() => sound.onChange(() => setSoundOn(sound.enabled)), []);
   const multi = useMultiMachine();
   const list = Object.values(sessions);
@@ -76,7 +81,7 @@ export function Hud() {
     // Above drei <Html> labels, which use z-index up to 20.
     <div className="pointer-events-none fixed inset-0 z-[100]">
       <header className={`${panel} top-3 left-3 flex items-center gap-2`}>
-        <h1 className="m-0 mr-1 text-[15px] font-semibold">Agent Office</h1>
+        <h1 className="m-0 mr-1 text-[15px] font-semibold max-sm:hidden">Agent Office</h1>
         <Badge appearance="tint" color={connected ? "success" : "danger"} size="small">
           {connected ? "live" : "reconnecting…"}
         </Badge>
@@ -85,8 +90,8 @@ export function Hud() {
           onCheckedValueChange={(_, d) => setTheme(d.checkedItems[0] as Theme)}
         >
           <MenuTrigger disableButtonEnhancement>
-            <Button size="small" icon={<current.icon />}>
-              {current.label}
+            <Button size="small" icon={<current.icon />} className="max-sm:!min-w-0">
+              <span className="max-sm:hidden">{current.label}</span>
             </Button>
           </MenuTrigger>
           <MenuPopover>
@@ -113,10 +118,26 @@ export function Hud() {
         <Tooltip content="Settings" relationship="label">
           <Button size="small" icon={<Settings20Regular />} onClick={() => setSettingsOpen(true)} />
         </Tooltip>
+        <div className="flex gap-1 md:hidden">
+          <ToggleButton
+            size="small"
+            checked={sheet === "agents"}
+            icon={<PeopleList20Regular />}
+            aria-label="Agents"
+            onClick={() => toggleSheet("agents")}
+          />
+          <ToggleButton
+            size="small"
+            checked={sheet === "feed"}
+            icon={<TextBulletListLtr20Regular />}
+            aria-label="Live feed"
+            onClick={() => toggleSheet("feed")}
+          />
+        </div>
       </header>
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
-      <aside className={`${panel} top-[60px] left-3 grid w-[240px] gap-1.5`}>
+      <aside className={`${panel} top-[60px] left-3 ${sheet === "agents" ? "grid" : "hidden"} w-[240px] gap-1.5 md:grid`}>
         {AGENTS.map((a) => {
           const mine = list.filter((s) => s.agent === a);
           const working = mine.filter((s) => s.status !== "idle").length;
@@ -146,13 +167,18 @@ export function Hud() {
         </div>
       </aside>
 
-      <aside className={`${panel} top-3 right-3 bottom-3 flex w-[340px] flex-col gap-2`}>
+      <aside
+        className={`${panel} ${sheet === "feed" ? "flex" : "hidden"} top-[60px] right-3 bottom-[76px] left-3 flex-col gap-2 md:top-3 md:bottom-3 md:left-auto md:flex md:w-[340px]`}
+      >
         <h2 className={heading}>Live feed</h2>
         <ul className="m-0 grid list-none auto-rows-max content-start gap-1 overflow-y-auto p-0">
           {[...feed].reverse().map((f) => (
             <li
               key={f.id}
-              onClick={() => select(f.key)}
+              onClick={() => {
+                select(f.key);
+                setSheet(null);
+              }}
               className="grid cursor-pointer grid-cols-[10px_28px_auto_1fr] items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-md px-1 py-[3px] hover:bg-white/5"
             >
               <Dot color={AGENT_META[f.agent].color} />
@@ -195,7 +221,7 @@ export function Hud() {
 
       {sel && (
         <section
-          className={`${panel} bottom-3 left-3 w-[380px] border-l-4`}
+          className={`${panel} right-3 bottom-[76px] left-3 max-h-[50vh] overflow-y-auto border-l-4 md:right-auto md:bottom-3 md:w-[380px]`}
           style={{ borderLeftColor: AGENT_META[sel.agent].color }}
         >
           <div className="flex items-start justify-between gap-2">

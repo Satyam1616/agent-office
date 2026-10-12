@@ -35,7 +35,11 @@ export class SessionStore {
     if (opts.autoSweep ?? true) setInterval(() => this.sweep(), 5000);
   }
 
-  snapshot(): ServerMessage {
+  has(key: string): boolean {
+    return this.sessions.has(key);
+  }
+
+  snapshot(): Extract<ServerMessage, { type: "snapshot" }> {
     return { type: "snapshot", sessions: [...this.sessions.values()], feed: this.feed };
   }
 

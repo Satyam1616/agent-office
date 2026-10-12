@@ -37,7 +37,7 @@ export function Timeline() {
 
   return (
     <div
-      className={`${panel} bottom-3 left-1/2 flex max-w-[600px] -translate-x-1/2 flex-wrap items-center justify-center gap-2`}
+      className={`${panel} right-3 bottom-3 left-3 flex flex-wrap items-center justify-center gap-2 md:right-auto md:left-1/2 md:max-w-[600px] md:-translate-x-1/2`}
     >
       <div className="flex gap-1">
         <Button

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en" class="h-full bg-[#0e1117] font-sans text-[14px] text-[#e6e9ef] [color-scheme:dark]">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Agent Office</title>
+    <link rel="stylesheet" href="/src/index.css" />
+  </head>
+  <body class="m-0 flex min-h-full items-center justify-center p-6">
+    <main class="flex w-full max-w-sm flex-col gap-5">
+      <div class="flex items-center gap-3">
+        <img src="/icon.png" alt="" class="size-12 rounded-xl" />
+        <div>
+          <h1 class="m-0 text-xl font-semibold">Agent Office</h1>
+          <p class="m-0 text-[#8b93a3]">Watch your coding agents from your phone</p>
+        </div>
+      </div>
+
+      <ol class="m-0 flex list-decimal flex-col gap-1 pl-5 text-[#c3c9d4]">
+        <li>Turn on Tailscale on this phone and on your computer.</li>
+        <li>On the computer: Agent Office → Settings → <b>Allow access over Tailscale</b>.</li>
+        <li>Scan the QR code it shows.</li>
+      </ol>
+
+      <button
+        id="scan"
+        class="rounded-lg bg-[#2f81f7] px-4 py-3 text-base font-semibold text-white active:bg-[#1f6feb] disabled:opacity-50"
+      >
+        Scan QR code
+      </button>
+
+      <form id="manual" class="flex flex-col gap-2">
+        <label for="link" class="text-[#8b93a3]">…or paste the link</label>
+        <div class="flex gap-2">
+          <input
+            id="link"
+            type="url"
+            inputmode="url"
+            autocomplete="off"
+            placeholder="http://100.x.y.z:4747/?token=…"
+            class="min-w-0 flex-1 rounded-lg border border-[#2a2f3a] bg-[#12151c] px-3 py-2.5 font-mono text-xs text-[#e6e9ef] outline-none focus:border-[#2f81f7]"
+          />
+          <button class="rounded-lg border border-[#2a2f3a] bg-[#1b1f27] px-4 font-semibold disabled:opacity-50">Connect</button>
+        </div>
+      </form>
+
+      <p id="status" class="m-0 min-h-5 text-[#8b93a3]" role="status"></p>
+
+      <div id="saved" class="hidden items-center justify-between gap-2 rounded-lg border border-[#2a2f3a] bg-[#12151c] px-3 py-2">
+        <span class="min-w-0 truncate text-[#c3c9d4]">Last hub: <span id="saved-host" class="font-mono text-xs"></span></span>
+        <button id="forget" class="shrink-0 text-[#ff8a8a]">Forget</button>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

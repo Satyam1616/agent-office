@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+/** Phones get the light preset by default; they also lay the HUD out differently (see Hud). */
+const isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
 export type Quality = "high" | "balanced" | "saver";
 export type NotifyLevel = "off" | "waiting" | "all";
 
@@ -22,7 +25,7 @@ interface Settings {
 export const useSettings = create<Settings>()(
   persist(
     (set) => ({
-      quality: "balanced",
+      quality: isPhone ? "saver" : "balanced",
       notify: "all",
       closeToTray: true,
       update: (patch) => set(patch),

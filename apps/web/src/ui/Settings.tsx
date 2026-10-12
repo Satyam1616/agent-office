@@ -12,9 +12,10 @@ import {
   Switch,
 } from "@fluentui/react-components";
 import { useEffect, useState } from "react";
-import { askNotifyPermission, getAutostart, isDesktop, setAutostart, setCloseToTray } from "../desktop";
+import { askNotifyPermission, CONNECT_PAGE, getAutostart, isDesktop, isMobileApp, setAutostart, setCloseToTray } from "../desktop";
 import { QUALITY, useSettings, type NotifyLevel, type Quality } from "../settings";
 import { sound } from "../sound";
+import { SharingSettings } from "./Sharing";
 
 const QUALITY_HINT: Record<Quality, string> = {
   high: "Sharpest on HiDPI screens, full effects, always 60 fps.",
@@ -33,7 +34,7 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <Dialog open={open} onOpenChange={(_, d) => !d.open && onClose()}>
-      <DialogSurface className="max-w-[460px]">
+      <DialogSurface className="max-w-[500px]">
         <DialogBody>
           <DialogTitle>Settings</DialogTitle>
           <DialogContent className="flex flex-col gap-4">
@@ -64,6 +65,16 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
               checked={soundOn}
               onChange={(_, d) => (d.checked ? void sound.enable() : sound.disable())}
             />
+
+            <SharingSettings />
+
+            {isMobileApp && (
+              <Field label="Hub" hint={location.host}>
+                <div>
+                  <Button onClick={() => location.assign(CONNECT_PAGE)}>Change hub…</Button>
+                </div>
+              </Field>
+            )}
 
             {isDesktop && (
               <>

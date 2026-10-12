@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "hub",
+  "description": "The office page served by the hub (any address/port, e.g. a Tailscale IP): notifications only.",
+  "windows": ["main"],
+  "remote": { "urls": ["http://*:*"] },
+  "permissions": ["notification:default"]
+}
