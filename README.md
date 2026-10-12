@@ -74,6 +74,31 @@ bun run dev:demo   # data palsu buat semua agent, enak buat liat-liat
 
 `?zoom=40` di URL buat ngatur zoom awal. Klik karakter buat liat detail sesinya.
 
+## Aplikasi desktop (Windows & Linux)
+
+Installer ada di halaman Releases: `.exe`/`.msi` buat Windows, `.deb`/`.rpm`/`.AppImage` buat Linux.
+Install, buka, langsung jalan, gak perlu Bun.
+
+- Dibikin pakai [Tauri](https://tauri.app): pakai webview bawaan OS (WebView2 / WebKitGTK), jadi
+  gak bawa Chromium sendiri kayak Electron. Collector-nya di-compile jadi satu binary (`bun build
+  --compile`) yang jalan di background, ±30MB RAM.
+- Kalau udah ada collector jalan di port 4747 (misal `bun run dev` di WSL), app-nya langsung
+  pakai itu dan gak nyalain collector sendiri.
+- **Windows + WSL:** app Windows otomatis baca log agent di home Windows *dan* di `/home/*`
+  tiap distro WSL yang lagi jalan (lewat `\\wsl.localhost`). Distro yang mati gak disentuh biar
+  gak kebangun sendiri. Override pakai env `AGENT_HOMES` (dipisah `;`).
+- History disimpen di folder data app (`%APPDATA%\dev.bimaadam.agentoffice` /
+  `~/.local/share/dev.bimaadam.agentoffice`).
+
+Build sendiri:
+
+```bash
+bun run app:build   # butuh Rust + (Linux) libwebkit2gtk-4.1-dev, hasilnya di apps/desktop/src-tauri/target/release/bundle
+```
+
+Atau push tag `v*` (misal `git tag v0.1.0 && git push --tags`): GitHub Actions nge-build installer
+Windows + Linux dan naruh di draft release.
+
 ## Dari laptop lain
 
 Real-time, delay sekitar 1 detik. Default-nya server cuma bisa dibuka dari mesin ini sendiri.
@@ -146,4 +171,8 @@ squashy555 (`apps/web/public/sounds/README.md`).
 - Format log ini internal dan bisa berubah tiap update agent; adapter bakal perlu disesuaikan.
 - Gemini cuma nulis chat log kalau sesinya disimpen; Kiro IDE (Windows) gak kebaca dari WSL,
   cuma kiro-cli.
+- OpenCode di dalam WSL kebaca dari app Windows dengan telat: SQLite gak bisa nge-lock lewat
+  `\\wsl.localhost`, jadi DB-nya dibaca tanpa file WAL dan update baru muncul setelah checkpoint.
+  Kalau mau real-time, jalanin collector di WSL (`bun run start`), app Windows otomatis pakai itu.
+- Installer belum di-sign: Windows SmartScreen bakal nanya dulu ("More info → Run anyway").
 - Status "nunggu izin" cuma kedeteksi di agent yang nulisnya ke log (Codex, Copilot).

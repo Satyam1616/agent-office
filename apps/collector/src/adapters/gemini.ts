@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import { basename, dirname } from "node:path";
 import { classifyTool, clip, describeInput, parseTs } from "../classify";
 import type { AgentEvent, AgentKind } from "../types";
@@ -62,7 +61,7 @@ function messagesEvents(agent: AgentKind, msgs: any[], ctx: FileCtx): AgentEvent
 // ~/.gemini/tmp/<project>/chats/session-*.jsonl
 export const gemini: JsonlAdapter = {
   agent: "gemini",
-  roots: [{ dir: `${homedir()}/.gemini/tmp`, pattern: "*/chats/*.jsonl" }],
+  roots: [{ dir: ".gemini/tmp", pattern: "*/chats/*.jsonl" }],
 
   initCtx(path) {
     // Fallback project name is the tmp folder, e.g. "emr-project-1" → "emr-project".

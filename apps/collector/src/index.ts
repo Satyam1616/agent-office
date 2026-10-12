@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { existsSync } from "node:fs";
-import { hostname } from "node:os";
+import { homedir, hostname } from "node:os";
 import { join, resolve } from "node:path";
 import { claude } from "./adapters/claude";
 import { codex } from "./adapters/codex";
@@ -11,6 +11,7 @@ import { startOpenCode } from "./adapters/opencode";
 import { qwen } from "./adapters/qwen";
 import { startDemo } from "./demo";
 import { History } from "./history";
+import { homes } from "./homes";
 import { startRelay } from "./relay";
 import { ReplayPlayer } from "./replay";
 import { SESSION_TTL_MS, SessionStore } from "./state";
@@ -23,9 +24,15 @@ const TOKEN = process.env.TOKEN ?? "";
 const MACHINE = process.env.MACHINE ?? hostname();
 const RELAY_TO = process.env.RELAY_TO; // e.g. http://100.64.0.2:4747 → run as relay
 const DEMO = process.argv.includes("--demo");
-const WEB_DIST = resolve(import.meta.dir, "../../web/dist");
+// The desktop app runs a compiled binary and points these at its own folders.
+const WEB_DIST = resolve(process.env.WEB_DIR ?? join(import.meta.dir, "../../web/dist"));
+// A compiled binary's import.meta.dir is a virtual path, so it falls back to the home dir.
+const COMPILED = /\$bunfs|~BUN/.test(import.meta.dir);
+const DB_PATH =
+  process.env.DB_PATH ?? (COMPILED ? join(homedir(), ".agent-office.db") : join(import.meta.dir, "..", "agent-office.db"));
 
 function watchLogs(emit: (e: AgentEvent, live: boolean) => void) {
+  console.log(`[collector] following agent logs in: ${homes().join(", ")}`);
   new JsonlTailer([claude, codex, gemini, qwen, copilot, kiro], emit, SESSION_TTL_MS).start();
   startOpenCode(emit, SESSION_TTL_MS);
 }
@@ -123,7 +130,7 @@ function startHub() {
   });
 
   // Demo events must not pollute the real per-agent stats.
-  const dbPath = DEMO ? ":memory:" : join(import.meta.dir, "..", "agent-office.db");
+  const dbPath = DEMO ? ":memory:" : DB_PATH;
   const history = new History(dbPath);
   const store = new SessionStore({
     machine: MACHINE,

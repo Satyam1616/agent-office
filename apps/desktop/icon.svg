@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b2030"/>
+      <stop offset="1" stop-color="#0e1117"/>
+    </linearGradient>
+  </defs>
+  <rect x="32" y="32" width="960" height="960" rx="200" fill="url(#bg)"/>
+  <!-- isometric office floor -->
+  <path d="M512 300 L832 485 L512 670 L192 485 Z" fill="#2a3142"/>
+  <path d="M192 485 L512 670 L512 730 L192 545 Z" fill="#1e2433"/>
+  <path d="M832 485 L512 670 L512 730 L832 545 Z" fill="#161b26"/>
+  <!-- back walls -->
+  <path d="M192 485 L512 300 L512 240 L192 425 Z" fill="#323a4e"/>
+  <path d="M512 300 L832 485 L832 425 L512 240 Z" fill="#3a4357"/>
+  <!-- agents: a pod of colored heads -->
+  <g>
+    <circle cx="400" cy="470" r="46" fill="#d97757"/>
+    <rect x="364" y="510" width="72" height="70" rx="26" fill="#d97757"/>
+    <circle cx="624" cy="470" r="46" fill="#10a37f"/>
+    <rect x="588" y="510" width="72" height="70" rx="26" fill="#10a37f"/>
+    <circle cx="512" cy="540" r="50" fill="#4f8cff"/>
+    <rect x="473" y="583" width="78" height="76" rx="28" fill="#4f8cff"/>
+  </g>
+  <!-- live dot -->
+  <circle cx="790" cy="250" r="56" fill="#39ff88"/>
+</svg>

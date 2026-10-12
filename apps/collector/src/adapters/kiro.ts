@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { classifyTool, clip, describeInput, parseTs } from "../classify";
 import type { AgentEvent } from "../types";
 import type { JsonlAdapter } from "../tail";
@@ -7,7 +6,7 @@ import type { JsonlAdapter } from "../tail";
 // ~/.kiro/sessions/cli/<session>.jsonl with metadata (cwd, title) in <session>.json
 export const kiro: JsonlAdapter = {
   agent: "kiro",
-  roots: [{ dir: `${homedir()}/.kiro/sessions/cli`, pattern: "*.jsonl" }],
+  roots: [{ dir: ".kiro/sessions/cli", pattern: "*.jsonl" }],
 
   initCtx(path) {
     try {

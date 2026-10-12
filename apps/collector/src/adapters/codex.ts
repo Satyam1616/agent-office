@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import { classifyTool, clip, describeInput, parseTs } from "../classify";
 import type { AgentEvent } from "../types";
 import type { JsonlAdapter } from "../tail";
@@ -29,7 +28,7 @@ function parseArgs(args: unknown): unknown {
 // ~/.codex/sessions/YYYY/MM/DD/rollout-<ts>-<uuid>.jsonl
 export const codex: JsonlAdapter = {
   agent: "codex",
-  roots: [{ dir: `${homedir()}/.codex/sessions`, pattern: "**/*.jsonl" }],
+  roots: [{ dir: ".codex/sessions", pattern: "**/*.jsonl" }],
 
   initCtx(path) {
     const id = path.match(UUID)?.[1];

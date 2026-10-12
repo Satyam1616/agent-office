@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import { basename, dirname } from "node:path";
 import { classifyTool, clip, describeInput, parseTs } from "../classify";
 import type { JsonlAdapter } from "../tail";
@@ -6,7 +5,7 @@ import type { JsonlAdapter } from "../tail";
 // ~/.copilot/session-state/<session>/events.jsonl
 export const copilot: JsonlAdapter = {
   agent: "copilot",
-  roots: [{ dir: `${homedir()}/.copilot/session-state`, pattern: "*/events.jsonl" }],
+  roots: [{ dir: ".copilot/session-state", pattern: "*/events.jsonl" }],
 
   initCtx(path) {
     return { sessionId: basename(dirname(path)) };

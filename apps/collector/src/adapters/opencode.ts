@@ -1,10 +1,10 @@
 import { Database } from "bun:sqlite";
 import { existsSync } from "node:fs";
-import { homedir } from "node:os";
 import { classifyTool, clip, describeInput } from "../classify";
+import { homes } from "../homes";
 import type { AgentEvent } from "../types";
 
-const DB_PATH = `${homedir()}/.local/share/opencode/opencode.db`;
+const DB_REL = ".local/share/opencode/opencode.db";
 
 interface Row {
   id: string;
@@ -16,21 +16,24 @@ interface Row {
   role: string | null;
 }
 
-/**
- * OpenCode keeps sessions in SQLite. Parts (tool calls, text, reasoning) are
- * updated in place, so we poll by `time_updated` and remember what was emitted.
- */
-export function startOpenCode(emit: (e: AgentEvent, live: boolean) => void, recentMs: number, pollMs = 1500) {
-  if (!existsSync(DB_PATH)) return;
-  let db: Database;
-  try {
-    db = new Database(DB_PATH, { readonly: true });
-  } catch (err) {
-    console.warn("[opencode] cannot open db:", err);
-    return;
-  }
+type Emit = (e: AgentEvent, live: boolean) => void;
 
-  const query = db.query<Row, [number]>(`
+/** Follows the OpenCode database of every home, picking up homes that appear later. */
+export function startOpenCode(emit: Emit, recentMs: number) {
+  const started = new Set<string>();
+  const check = () => {
+    for (const home of homes()) {
+      const path = `${home}/${DB_REL}`;
+      if (started.has(path) || !existsSync(path)) continue;
+      started.add(path);
+      followDb(path, emit, recentMs);
+    }
+  };
+  check();
+  setInterval(check, 30_000);
+}
+
+const SQL = `
     SELECT p.id, p.session_id, p.time_updated, p.data, s.directory, s.parent_id,
            json_extract(m.data, '$.role') AS role
     FROM part p
@@ -38,7 +41,44 @@ export function startOpenCode(emit: (e: AgentEvent, live: boolean) => void, rece
     LEFT JOIN message m ON m.id = p.message_id
     WHERE p.time_updated > ?
     ORDER BY p.time_updated
-    LIMIT 2000`);
+    LIMIT 2000`;
+
+const SQLITE_OPEN_READONLY = 0x01;
+const SQLITE_OPEN_URI = 0x40;
+
+/**
+ * Returns a function that runs the query. SQLite can't lock across the
+ * \\wsl.localhost share, so there the db is opened `immutable` and reopened
+ * on every poll; that skips the WAL, so WSL updates lag until a checkpoint.
+ */
+function reader(path: string): (since: number) => Row[] {
+  if (!path.startsWith("//")) {
+    const query = new Database(path, { readonly: true }).query<Row, [number]>(SQL);
+    return (since) => query.all(since);
+  }
+  return (since) => {
+    const db = new Database(`file://${path}?immutable=1`, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI);
+    try {
+      return db.query<Row, [number]>(SQL).all(since);
+    } finally {
+      db.close();
+    }
+  };
+}
+
+/**
+ * OpenCode keeps sessions in SQLite. Parts (tool calls, text, reasoning) are
+ * updated in place, so we poll by `time_updated` and remember what was emitted.
+ */
+function followDb(path: string, emit: Emit, recentMs: number, pollMs = 1500) {
+  let read: (since: number) => Row[];
+  try {
+    read = reader(path);
+    read(Date.now());
+  } catch (err) {
+    console.warn(`[opencode] cannot read ${path}:`, String(err));
+    return;
+  }
 
   const emitted = new Map<string, string>(); // part id → last emitted phase
   let cursor = Date.now() - recentMs;
@@ -47,7 +87,7 @@ export function startOpenCode(emit: (e: AgentEvent, live: boolean) => void, rece
   const tick = () => {
     let rows: Row[];
     try {
-      rows = query.all(cursor);
+      rows = read(cursor);
     } catch (err) {
       console.warn("[opencode] query failed, stopping:", err);
       clearInterval(timer);

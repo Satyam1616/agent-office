@@ -1,4 +1,5 @@
 import { existsSync, statSync, openSync, readSync, closeSync } from "node:fs";
+import { homes } from "./homes";
 import type { AgentEvent, AgentKind } from "./types";
 
 export interface FileCtx {
@@ -14,6 +15,7 @@ export interface FileCtx {
 
 export interface JsonlAdapter {
   agent: AgentKind;
+  /** Log dirs relative to each home directory (see homes.ts). */
   roots: { dir: string; pattern: string }[];
   initCtx?(path: string): Partial<FileCtx>;
   parse(obj: any, ctx: FileCtx): AgentEvent[];
@@ -58,7 +60,7 @@ function completeLines(buf: Buffer): { lines: string[]; consumed: number } {
  */
 export class JsonlTailer {
   private files = new Map<string, Tracked>();
-  private started = false;
+  private homesSeen = new Set<string>();
 
   constructor(
     private adapters: JsonlAdapter[],
@@ -68,29 +70,37 @@ export class JsonlTailer {
 
   start(scanMs = 3000, pollMs = 700) {
     this.scan();
-    this.started = true;
     setInterval(() => this.scan(), scanMs);
     setInterval(() => this.poll(), pollMs);
   }
 
   private scan() {
     const now = Date.now();
-    for (const adapter of this.adapters) {
-      for (const root of adapter.roots) {
-        if (!existsSync(root.dir)) continue;
-        for (const path of new Bun.Glob(root.pattern).scanSync({ cwd: root.dir, absolute: true })) {
-          if (this.files.has(path)) continue;
-          let st;
-          try {
-            st = statSync(path);
-          } catch {
-            continue;
+    for (const home of homes()) {
+      // A home seen for the first time (e.g. a WSL distro that just started) holds
+      // only old sessions, so it gets the startup treatment instead of a full replay.
+      const fresh = !this.homesSeen.has(home);
+      this.homesSeen.add(home);
+      for (const adapter of this.adapters) {
+        for (const root of adapter.roots) {
+          const dir = `${home}/${root.dir}`;
+          if (!existsSync(dir)) continue;
+          for (const found of new Bun.Glob(root.pattern).scanSync({ cwd: dir, absolute: true })) {
+            // Forward slashes everywhere so adapters can match paths on Windows too.
+            const path = found.replaceAll("\\", "/");
+            if (this.files.has(path)) continue;
+            let st;
+            try {
+              st = statSync(path);
+            } catch {
+              continue;
+            }
+            const t: Tracked = { adapter, offset: st.size, size: st.size, mtime: st.mtimeMs };
+            this.files.set(path, t);
+            // Files appearing later are new sessions: read them from the top.
+            if (!fresh) t.offset = 0;
+            else if (now - st.mtimeMs < this.recentMs) this.backfill(path, t);
           }
-          const t: Tracked = { adapter, offset: st.size, size: st.size, mtime: st.mtimeMs };
-          this.files.set(path, t);
-          // Files appearing after startup are new sessions: read them from the top.
-          if (this.started) t.offset = 0;
-          else if (now - st.mtimeMs < this.recentMs) this.backfill(path, t);
         }
       }
     }

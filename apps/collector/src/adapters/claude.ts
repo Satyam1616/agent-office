@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import { basename, dirname } from "node:path";
 import { classifyTool, clip, describeInput, parseTs } from "../classify";
 import type { AgentEvent } from "../types";
@@ -7,7 +6,7 @@ import type { JsonlAdapter } from "../tail";
 // ~/.claude/projects/<project>/<session>.jsonl, subagents under <session>/subagents/*.jsonl
 export const claude: JsonlAdapter = {
   agent: "claude",
-  roots: [{ dir: `${homedir()}/.claude/projects`, pattern: "**/*.jsonl" }],
+  roots: [{ dir: ".claude/projects", pattern: "**/*.jsonl" }],
 
   initCtx(path) {
     if (!path.includes("/subagents/")) return {};

@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import { classifyTool, clip, describeInput, parseTs } from "../classify";
 import type { AgentEvent } from "../types";
 import type { JsonlAdapter } from "../tail";
@@ -6,7 +5,7 @@ import type { JsonlAdapter } from "../tail";
 // ~/.qwen/projects/<project>/chats/<session>.jsonl — Claude-like lines, Gemini-style parts.
 export const qwen: JsonlAdapter = {
   agent: "qwen",
-  roots: [{ dir: `${homedir()}/.qwen/projects`, pattern: "*/chats/*.jsonl" }],
+  roots: [{ dir: ".qwen/projects", pattern: "*/chats/*.jsonl" }],
 
   parse(d, ctx) {
     if (typeof d.cwd === "string") ctx.cwd = d.cwd;

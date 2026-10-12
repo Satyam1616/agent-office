@@ -1,0 +1,14 @@
+{
+  "name": "@agent-office/desktop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "app:dev": "tauri dev",
+    "app:build": "tauri build",
+    "prepare-app": "bun run --cwd ../web build && bun scripts/build-collector.ts"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.2"
+  }
+}
