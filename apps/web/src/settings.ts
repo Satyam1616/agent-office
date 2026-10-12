@@ -19,6 +19,8 @@ interface Settings {
   notify: NotifyLevel;
   /** Desktop app: closing the window keeps it running in the tray. */
   closeToTray: boolean;
+  /** Side panels shown on wide screens (phones open one at a time instead). */
+  panels: { agents: boolean; feed: boolean };
   update: (patch: Partial<Omit<Settings, "update">>) => void;
 }
 
@@ -28,6 +30,7 @@ export const useSettings = create<Settings>()(
       quality: isPhone ? "saver" : "balanced",
       notify: "all",
       closeToTray: true,
+      panels: { agents: true, feed: true },
       update: (patch) => set(patch),
     }),
     { name: "agent-office-settings" },

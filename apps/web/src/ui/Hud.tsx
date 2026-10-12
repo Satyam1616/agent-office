@@ -29,9 +29,10 @@ import {
   Wrench20Regular,
   type FluentIcon,
 } from "@fluentui/react-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { ACTIVITY_META, AGENT_META, AGENTS, clipText, type SessionState } from "../agents";
 import { ROLE_META, ROLES, roleFor, type Theme } from "../roles";
+import { useSettings } from "../settings";
 import { sound } from "../sound";
 import { useClock, useMultiMachine, useOffice } from "../store";
 import { ACTIVITY_ICON, AgvIcon, Ico, RoleLabel, SubagentIcon } from "./icons";
@@ -43,6 +44,19 @@ const timeAgo = (ts: number, now: number) => {
   const s = Math.max(0, Math.round((now - ts) / 1000));
   return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`;
 };
+
+const PHONE = "(max-width: 767px)";
+const useIsPhone = () =>
+  useSyncExternalStore(
+    (onChange) => {
+      const m = matchMedia(PHONE);
+      m.addEventListener("change", onChange);
+      return () => m.removeEventListener("change", onChange);
+    },
+    () => matchMedia(PHONE).matches,
+  );
+
+type Panel = "agents" | "feed";
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -68,9 +82,14 @@ export function Hud() {
   const now = useClock(useNow());
   const [soundOn, setSoundOn] = useState(sound.enabled);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // Phones: the side panels don't fit next to the scene, so they open one at a time.
-  const [sheet, setSheet] = useState<"agents" | "feed" | null>(null);
-  const toggleSheet = (s: "agents" | "feed") => setSheet((cur) => (cur === s ? null : s));
+  // Wide screens show/hide each side panel (remembered); phones open one at a time.
+  const phone = useIsPhone();
+  const panels = useSettings((s) => s.panels);
+  const updateSettings = useSettings((s) => s.update);
+  const [sheet, setSheet] = useState<Panel | null>(null);
+  const isOpen = (p: Panel) => (phone ? sheet === p : panels[p]);
+  const toggle = (p: Panel) =>
+    phone ? setSheet((cur) => (cur === p ? null : p)) : updateSettings({ panels: { ...panels, [p]: !panels[p] } });
   useEffect(() => sound.onChange(() => setSoundOn(sound.enabled)), []);
   const multi = useMultiMachine();
   const list = Object.values(sessions);
@@ -118,26 +137,26 @@ export function Hud() {
         <Tooltip content="Settings" relationship="label">
           <Button size="small" icon={<Settings20Regular />} onClick={() => setSettingsOpen(true)} />
         </Tooltip>
-        <div className="flex gap-1 md:hidden">
+        <Tooltip content={isOpen("agents") ? "Hide agents" : "Show agents"} relationship="label">
           <ToggleButton
             size="small"
-            checked={sheet === "agents"}
+            checked={isOpen("agents")}
             icon={<PeopleList20Regular />}
-            aria-label="Agents"
-            onClick={() => toggleSheet("agents")}
+            onClick={() => toggle("agents")}
           />
+        </Tooltip>
+        <Tooltip content={isOpen("feed") ? "Hide live feed" : "Show live feed"} relationship="label">
           <ToggleButton
             size="small"
-            checked={sheet === "feed"}
+            checked={isOpen("feed")}
             icon={<TextBulletListLtr20Regular />}
-            aria-label="Live feed"
-            onClick={() => toggleSheet("feed")}
+            onClick={() => toggle("feed")}
           />
-        </div>
+        </Tooltip>
       </header>
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
-      <aside className={`${panel} top-[60px] left-3 ${sheet === "agents" ? "grid" : "hidden"} w-[240px] gap-1.5 md:grid`}>
+      <aside className={`${panel} top-[60px] left-3 ${isOpen("agents") ? "grid" : "hidden"} w-[240px] gap-1.5`}>
         {AGENTS.map((a) => {
           const mine = list.filter((s) => s.agent === a);
           const working = mine.filter((s) => s.status !== "idle").length;
@@ -168,10 +187,10 @@ export function Hud() {
       </aside>
 
       <aside
-        className={`${panel} ${sheet === "feed" ? "flex" : "hidden"} top-[60px] right-3 bottom-[76px] left-3 flex-col gap-2 md:top-3 md:bottom-3 md:left-auto md:flex md:w-[340px]`}
+        className={`${panel} ${isOpen("feed") ? "flex" : "hidden"} top-[60px] right-3 bottom-[76px] left-3 flex-col gap-2 md:top-3 md:bottom-auto md:left-auto md:max-h-[min(60vh,560px)] md:w-[340px]`}
       >
         <h2 className={heading}>Live feed</h2>
-        <ul className="m-0 grid list-none auto-rows-max content-start gap-1 overflow-y-auto p-0">
+        <ul className="m-0 grid min-h-0 list-none auto-rows-max content-start gap-1 overflow-y-auto p-0">
           {[...feed].reverse().map((f) => (
             <li
               key={f.id}
