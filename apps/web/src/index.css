@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Tailwind's default sans stack lists emoji fonts, which hijack digits and spaces on some Linux setups. */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}

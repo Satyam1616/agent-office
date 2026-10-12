@@ -1,0 +1,18 @@
+{
+  "name": "agent-office",
+  "private": true,
+  "description": "3D live view of every coding agent working on this machine",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:demo": "bun run --filter @agent-office/collector dev:demo & bun run --filter @agent-office/web dev",
+    "start": "bun run --filter @agent-office/web build && bun apps/collector/src/index.ts",
+    "relay": "bun apps/collector/src/index.ts",
+    "dev:collector": "bun run --filter @agent-office/collector dev",
+    "dev:web": "bun run --filter @agent-office/web dev",
+    "typecheck": "bun run --filter '*' typecheck",
+    "build": "bun run --filter '*' build"
+  }
+}
