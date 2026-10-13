@@ -22,8 +22,10 @@ class SoundEngine {
   private hum!: GainNode; // CNC spindles
   private buzz!: GainNode; // laser cutters
   private rumble!: GainNode; // conveyors
+  private servo!: GainNode; // QC gantry moving the probe
   private samples: Partial<Record<Machine, GainNode>> = {};
   private typingRate = 0; // keystrokes per second (office)
+  private probing = 0; // QC stations measuring right now
   private lastShot = new Map<string, number>();
   private prev = new Map<string, SessionState>();
   enabled = false;
@@ -68,7 +70,9 @@ class SoundEngine {
     this.hum = this.loop("sawtooth", 98, { type: "lowpass", freq: 500 }, 9, 6);
     this.buzz = this.loop("square", 233, { type: "bandpass", freq: 1900 }, 31, 30);
     this.rumble = this.noiseLoop(140);
+    this.servo = this.loop("triangle", 380, { type: "lowpass", freq: 900 }, 0.9, 60);
     this.scheduleTyping();
+    this.scheduleProbe();
     for (const m of Object.keys(SAMPLES) as Machine[]) void this.loadSample(m);
   }
 
@@ -156,6 +160,34 @@ class SoundEngine {
     src.start(t, Math.random(), 0.04);
   }
 
+  /** QC probe: a tick and a short confirmation beep each time it touches the part. */
+  private scheduleProbe() {
+    const next = () => {
+      if (this.enabled && this.probing > 0) {
+        this.tick();
+        this.tone(2637, 0.02, 0.07, "sine", 0.06);
+      }
+      // About as often as the animated probe dips (every ~1.4s), faster with more stations.
+      setTimeout(next, (1400 / Math.min(3, Math.max(1, this.probing))) * (0.8 + Math.random() * 0.4));
+    };
+    next();
+  }
+
+  private tick() {
+    const ctx = this.ctx!;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    const f = ctx.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.value = 4200;
+    const g = ctx.createGain();
+    const t = ctx.currentTime;
+    g.gain.setValueAtTime(0.18, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+    src.connect(f).connect(g).connect(this.master);
+    src.start(t, Math.random(), 0.02);
+  }
+
   private tone(freq: number, at: number, dur: number, type: OscillatorType = "sine", vol = 0.2) {
     const ctx = this.ctx!;
     const osc = ctx.createOscillator();
@@ -191,6 +223,11 @@ class SoundEngine {
     this.tone(659, 0, 0.18, "triangle", 0.12);
     this.tone(880, 0.12, 0.25, "triangle", 0.12);
   };
+  /** QC verdict "pass": two quick rising beeps (a failure already sounds the buzzer). */
+  private pass = () => {
+    this.tone(1760, 0, 0.08, "square", 0.05);
+    this.tone(2349, 0.1, 0.14, "square", 0.05);
+  };
   private prompt = () => this.tone(523, 0, 0.12, "sine", 0.1);
 
   /** Diff the office against the last frame: drones follow activity, one-shots follow transitions. */
@@ -218,6 +255,8 @@ class SoundEngine {
     machine("stepper", printing, null, 0);
     machine("laser", count("bash"), this.buzz, 0.025);
     set(this.rumble, factory && busy.length ? 0.06 : 0);
+    set(this.servo, factory ? 0.012 * Math.min(3, count("reviewer")) : 0);
+    this.probing = factory ? count("reviewer") : 0;
     this.typingRate = factory ? 0 : 6 * Math.min(4, count("coder") + count("bash"));
 
     if (this.enabled) {
@@ -229,6 +268,11 @@ class SoundEngine {
           if (s.failCount > p.failCount) this.shot("fail", this.fail);
           if (s.status === "waiting" && p.status !== "waiting") this.shot("alarm", this.alarm);
           if (p.status === "idle" && s.status === "working") this.shot("prompt", this.prompt);
+          // A check finished cleanly: the QC station moved on (next tool, other role or turn end).
+          const checked = p.status !== "idle" && roleFor(p) === "reviewer";
+          const movedOn = s.toolCount > p.toolCount || roleFor(s) !== "reviewer" || s.status === "idle";
+          if (factory && checked && movedOn && s.failCount === p.failCount && s.lastOk !== false)
+            this.shot("pass", this.pass);
         }
       }
     }

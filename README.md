@@ -58,7 +58,8 @@ Pass/fail comes from each agent's log (`is_error`, exit codes, `status: error`, 
 Use the 🔇/🔊 button next to the dropdown. Factory machines use **real recordings** (CC0 from
 Freesound, see `apps/web/public/sounds/README.md`): ⚙️ CNC mill while an agent edits a file,
 🖨️ stepper motors while it creates a new file, ⚡ laser cutter while it runs a command. The rest
-is synthesized with Web Audio: conveyor rumble, keyboard typing in the office, a "ding" when a
+is synthesized with Web Audio: conveyor rumble, 🔬 the QC probe's servo whir with a tick and beep
+on every touch plus a double beep when a check passes, keyboard typing in the office, a "ding" when a
 turn finishes, a buzzer when a tool fails, an alarm when an agent is waiting for you, and a chime
 when a new session arrives.
 
