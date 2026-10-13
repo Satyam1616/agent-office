@@ -13,6 +13,7 @@ private val BACKGROUND = Color.parseColor("#0E1117")
 
 class MainActivity : TauriActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
+    CrashReport.install(this)
     // The app is always dark: light status/navigation bar icons.
     enableEdgeToEdge(
       statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
@@ -30,5 +31,7 @@ class MainActivity : TauriActivity() {
       view.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, keyboard.bottom))
       WindowInsetsCompat.CONSUMED
     }
+
+    CrashReport.showIfAny(this)
   }
 }
