@@ -53,8 +53,10 @@ android {
         }
         getByName("release") {
             if (keystore != null) signingConfig = signingConfigs.getByName("release")
+            // R8 broke the barcode scanner (an NPE inside ML Kit/CameraX as the scanner starts,
+            // issue #1), and the app is a thin viewer, so ship it unshrunk with readable traces.
             optimization {
-               enable = true
+               enable = false
             }
             proguardFiles(
                 *fileTree(".") {
