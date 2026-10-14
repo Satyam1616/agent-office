@@ -16,6 +16,6 @@ pkgbase = agent-office-bin
 	options = !strip
 	options = !debug
 	source = Agent.Office_0.3.5_amd64.deb::https://github.com/bimaadam/agent-office/releases/download/v0.3.5/Agent.Office_0.3.5_amd64.deb
-	sha256sums = SKIP
+	sha256sums = 40d5a5915feebe54cb5312957b31ce8db3246e22e6030470a712f86b567a4975
 
 pkgname = agent-office-bin

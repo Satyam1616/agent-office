@@ -15,7 +15,7 @@ conflicts=("$_name")
 # The collector is a `bun build --compile` binary: stripping it cuts off the bundled script.
 options=('!strip' '!debug')
 source=("Agent.Office_${pkgver}_amd64.deb::$url/releases/download/v$pkgver/Agent.Office_${pkgver}_amd64.deb")
-sha256sums=('SKIP')
+sha256sums=('40d5a5915feebe54cb5312957b31ce8db3246e22e6030470a712f86b567a4975')
 
 package() {
   bsdtar -xf data.tar.* -C "$pkgdir"
