@@ -1,0 +1,30 @@
+# Maintainer: bimaadam <https://github.com/bimaadam>
+# Repackages the .deb from GitHub Releases. Sound and media use Arch's own GStreamer.
+pkgname=agent-office-bin
+_name=agent-office
+pkgver=0.3.5
+pkgrel=1
+pkgdesc='3D live view of your coding agents (Claude Code, Codex, Gemini, Qwen, Copilot, Kiro, OpenCode)'
+arch=('x86_64')
+url='https://github.com/bimaadam/agent-office'
+license=('unknown')
+depends=('webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator' 'gst-plugins-base' 'gst-plugins-good')
+optdepends=('tailscale: share the office with your other devices')
+provides=("$_name")
+conflicts=("$_name")
+# The collector is a `bun build --compile` binary: stripping it cuts off the bundled script.
+options=('!strip' '!debug')
+source=("Agent.Office_${pkgver}_amd64.deb::$url/releases/download/v$pkgver/Agent.Office_${pkgver}_amd64.deb")
+sha256sums=('SKIP')
+
+package() {
+  bsdtar -xf data.tar.* -C "$pkgdir"
+  # Tauri writes the 256px icon as "256x256@2"; move it where icon themes look.
+  local icons="$pkgdir/usr/share/icons/hicolor"
+  if [[ -d "$icons/256x256@2" ]]; then
+    mkdir -p "$icons/256x256"
+    mv "$icons/256x256@2/apps" "$icons/256x256/"
+    rm -r "$icons/256x256@2"
+  fi
+  mv "$pkgdir/usr/share/applications/Agent Office.desktop" "$pkgdir/usr/share/applications/$_name.desktop"
+}

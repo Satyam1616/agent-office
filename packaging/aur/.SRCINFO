@@ -1,0 +1,21 @@
+pkgbase = agent-office-bin
+	pkgdesc = 3D live view of your coding agents (Claude Code, Codex, Gemini, Qwen, Copilot, Kiro, OpenCode)
+	pkgver = 0.3.5
+	pkgrel = 1
+	url = https://github.com/bimaadam/agent-office
+	arch = x86_64
+	license = unknown
+	depends = webkit2gtk-4.1
+	depends = gtk3
+	depends = libayatana-appindicator
+	depends = gst-plugins-base
+	depends = gst-plugins-good
+	optdepends = tailscale: share the office with your other devices
+	provides = agent-office
+	conflicts = agent-office
+	options = !strip
+	options = !debug
+	source = Agent.Office_0.3.5_amd64.deb::https://github.com/bimaadam/agent-office/releases/download/v0.3.5/Agent.Office_0.3.5_amd64.deb
+	sha256sums = SKIP
+
+pkgname = agent-office-bin

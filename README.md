@@ -100,6 +100,13 @@ Linux. Install, open, done: no Bun required.
 - History is stored in the app's data folder (`%APPDATA%\dev.bimaadam.agentoffice` /
   `~/.local/share/dev.bimaadam.agentoffice`).
 
+**Arch / EndeavourOS / Manjaro:** use the PKGBUILD in `packaging/aur/` (installs the `.deb`
+with Arch's own WebKitGTK and GStreamer, so sound works and it shows up in the app menu):
+
+```bash
+cd packaging/aur && makepkg -si
+```
+
 Build it yourself:
 
 ```bash
