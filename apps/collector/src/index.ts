@@ -109,12 +109,18 @@ function startHub() {
 
         // Phone access switch: only from this machine's own pages, never remotely.
         if (p === "/api/remote") {
+          // Browsers send no Origin on a same-origin GET, so demanding one here would hide the
+          // sharing panel from the app's own page. Reading is safe without it: no response ever
+          // carries Access-Control-Allow-Origin, so another site cannot read the answer. Every
+          // state-changing request stays strict, and browsers always send Origin on those.
+          const origin = req.headers.get("origin");
+          const originOk = origin ? isLoopbackOrigin(origin, hostHeader, PORT) : req.method === "GET";
           if (
             remote ||
             PROXY_HOSTS.size > 0 ||
             forwarded ||
             !isLoopbackHost(hostHeader, PORT) ||
-            !isLoopbackOrigin(req.headers.get("origin"), hostHeader, PORT)
+            !originOk
           ) {
             return withReferrerPolicy(new Response("forbidden", { status: 403 }));
           }
