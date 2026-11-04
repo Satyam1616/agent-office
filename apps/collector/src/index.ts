@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { existsSync } from "node:fs";
-import { homedir, hostname } from "node:os";
+import { homedir, hostname as osHostname } from "node:os";
 import { join, resolve } from "node:path";
 import { claude } from "./adapters/claude";
 import { codex } from "./adapters/codex";
@@ -24,8 +24,10 @@ import type { AgentEvent, IngestBatch, ReplayCommand, ServerMessage } from "./ty
 
 const PORT = Number(process.env.PORT ?? 4747);
 const HOST = process.env.HOST ?? "127.0.0.1";
+const DEV = process.env.NODE_ENV === "development" || process.argv.includes("--dev");
+const PROXY_HOSTS = new Set((process.env.ALLOWED_HOSTS ?? "").split(",").map((host) => host.trim().toLowerCase()).filter(Boolean));
 const TOKEN = process.env.TOKEN ?? "";
-const MACHINE = process.env.MACHINE ?? hostname();
+const MACHINE = process.env.MACHINE ?? osHostname();
 const RELAY_TO = process.env.RELAY_TO; // e.g. http://100.64.0.2:4747 → run as relay
 const DEMO = process.argv.includes("--demo");
 // The desktop app runs a compiled binary and points these at its own folders.
@@ -86,11 +88,13 @@ function startHub() {
       hostname,
       port: PORT,
       async fetch(req, server) {
-        const allowedHosts = getAllowedHosts(tailscaleIPs(), tailnet, HOST);
-        if (!isAllowedHost(req.headers.get("host"), allowedHosts)) {
+        const allowedHosts = getAllowedHosts(tailscaleIPs(), tailnet, HOST, osHostname());
+        for (const host of PROXY_HOSTS) allowedHosts.add(host);
+        const hostHeader = req.headers.get("host");
+        if (!isAllowedHost(hostHeader, allowedHosts, PORT, DEV, PROXY_HOSTS)) {
           return withReferrerPolicy(new Response("forbidden host", { status: 403 }));
         }
-        if (!isAllowedOrigin(req.headers.get("origin"), allowedHosts)) {
+        if (!isAllowedOrigin(req.headers.get("origin"), allowedHosts, hostHeader, PORT, DEV)) {
           return withReferrerPolicy(new Response("forbidden origin", { status: 403 }));
         }
 
@@ -232,7 +236,8 @@ function startHub() {
   };
   const syncDevices = async () => {
     const on = remoteAccess.status().enabled;
-    if (on) await tailnet.refresh();
+    // Keep this machine's MagicDNS identity fresh even when device sharing is off.
+    await tailnet.refresh();
     peers.set(on);
   };
   const sharingStatus = (): RemoteStatus & { devices: DeviceStatus[]; problem?: string } => ({

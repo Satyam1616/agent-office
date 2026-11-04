@@ -10,7 +10,7 @@ import type { Vec3 } from "./layout";
 import { useWalker } from "./useWalker";
 
 // CC0 model by Tomás Laulhé (Quaternius), via the three.js examples; see public/models/robot/README.md.
-const MODEL = "/models/robot/RobotExpressive.glb";
+const MODEL = `${import.meta.env.BASE_URL}models/robot/RobotExpressive.glb`;
 const HEIGHT = 1.5;
 const FADE = 0.25;
 

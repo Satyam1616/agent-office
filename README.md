@@ -81,6 +81,28 @@ bun run dev:demo   # fake data for every agent, handy for looking around
 
 Add `?zoom=40` to the URL to set the initial zoom. Click a character to see its session details.
 
+The collector checks each request's `Host` and browser `Origin` against local, Tailscale, and
+configured hostnames, including the port. The Vite origin on `localhost:5173` is allowed only by
+the collector's development command. Requests from relays and peer collectors may omit `Origin`.
+The collector does not send `Access-Control-Allow-Origin`.
+
+`HOST` controls the address the collector binds to. `HOST=0.0.0.0` listens on every IPv4
+interface and requires a `TOKEN` of at least 16 characters, but it does not make arbitrary Host
+headers valid. LAN IP addresses are not added automatically; plain LAN sharing is unsupported.
+To intentionally serve a known hostname through a reverse proxy, set `ALLOWED_HOSTS` to a
+comma-separated list (for example `ALLOWED_HOSTS=office.example.com`) and have the proxy preserve
+that Host. When the proxy omits a port, the browser Origin must use its standard port (80 for HTTP
+or 443 for HTTPS). Configure the proxy to restrict access and terminate HTTPS; the collector
+checks the public hostname and Origin but does not itself provide TLS. Set `TOKEN` for viewers
+coming through the proxy and pass it to the collector as `?token=...` (the collector also accepts
+`Authorization: Bearer ...`).
+
+On Tailscale, the machine's short hostname is accepted immediately, including while the initial
+Tailscale status poll is running. Its full MagicDNS name and Tailscale IPs are added from the
+cached local status, even when sharing with other devices is off; the collector refreshes that
+status in the background. This lookup is cached by the Tailnet client and does not launch a
+Tailscale process per request.
+
 ## Desktop app (Windows & Linux)
 
 Installers are on the Releases page: `.exe`/`.msi` for Windows, `.deb`/`.rpm`/`.AppImage` for

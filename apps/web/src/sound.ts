@@ -7,9 +7,9 @@ import { useOffice } from "./store";
 
 type Machine = "cnc" | "laser" | "stepper";
 const SAMPLES: Record<Machine, string> = {
-  cnc: "/sounds/cnc.mp3",
-  laser: "/sounds/laser.mp3",
-  stepper: "/sounds/stepper.mp3",
+  cnc: `${import.meta.env.BASE_URL}sounds/cnc.mp3`,
+  laser: `${import.meta.env.BASE_URL}sounds/laser.mp3`,
+  stepper: `${import.meta.env.BASE_URL}sounds/stepper.mp3`,
 };
 
 const PREF_KEY = "agent-office-sound";
