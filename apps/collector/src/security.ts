@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import type { Tailnet } from "./tailnet";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
@@ -11,6 +12,7 @@ export function normalizeHost(host: string | null | undefined): string {
     const endBracket = trimmed.indexOf("]");
     if (endBracket !== -1) return trimmed.slice(1, endBracket);
   }
+  if (isIP(trimmed) === 6) return trimmed;
   return trimmed.split(":")[0] ?? "";
 }
 
@@ -21,6 +23,36 @@ function authority(value: string): { host: string; port: string } | null {
     return { host: normalizeHost(url.hostname), port: url.port };
   } catch {
     return null;
+  }
+}
+
+export function hasProxyHeaders(headers: Headers): boolean {
+  return ["x-forwarded-for", "forwarded", "via"].some((name) => headers.has(name));
+}
+
+export function isLoopbackHost(hostHeader: string | null | undefined, serverPort: number): boolean {
+  if (!hostHeader) return false;
+  const parsed = authority(hostHeader);
+  return !!parsed && LOOPBACK_HOSTS.has(parsed.host) && parsed.port === String(serverPort);
+}
+
+export function isLoopbackOrigin(
+  originHeader: string | null | undefined,
+  hostHeader: string | null | undefined,
+  serverPort: number,
+): boolean {
+  if (!originHeader || originHeader === "null" || !hostHeader) return false;
+  const request = authority(hostHeader);
+  if (!request || !LOOPBACK_HOSTS.has(request.host) || request.port !== String(serverPort)) return false;
+  try {
+    const url = new URL(originHeader);
+    if (url.protocol === "tauri:") return url.hostname.toLowerCase() === "localhost";
+    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+    const originHost = normalizeHost(url.hostname);
+    const originPort = url.port || (url.protocol === "https:" ? "443" : "80");
+    return LOOPBACK_HOSTS.has(originHost) && originHost === request.host && originPort === request.port;
+  } catch {
+    return false;
   }
 }
 

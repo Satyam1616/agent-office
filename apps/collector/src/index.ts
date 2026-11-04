@@ -16,7 +16,7 @@ import { startRelay } from "./relay";
 import { Peers, type DeviceStatus } from "./peers";
 import { RemoteAccess, tailscaleIPs, type RemoteStatus } from "./remote";
 import { ReplayPlayer } from "./replay";
-import { getAllowedHosts, isAllowedHost, isAllowedOrigin } from "./security";
+import { getAllowedHosts, hasProxyHeaders, isAllowedHost, isAllowedOrigin, isLoopbackHost, isLoopbackOrigin } from "./security";
 import { SESSION_TTL_MS, SessionStore } from "./state";
 import { JsonlTailer } from "./tail";
 import { Tailnet } from "./tailnet";
@@ -59,6 +59,10 @@ if (RELAY_TO) {
 
 function startHub() {
   const loopback = HOST === "127.0.0.1" || HOST === "localhost" || HOST === "::1";
+  if (PROXY_HOSTS.size > 0 && TOKEN.length < 16) {
+    console.error("[collector] ALLOWED_HOSTS requires TOKEN (16+ characters)");
+    process.exit(1);
+  }
   // Session logs contain prompts and code: anything beyond localhost needs a token.
   if (!loopback && TOKEN.length < 16) {
     console.error(`[collector] HOST=${HOST} exposes your agent logs; set TOKEN (16+ chars), e.g.\n  TOKEN=$(openssl rand -hex 16)`);
@@ -88,6 +92,8 @@ function startHub() {
       hostname,
       port: PORT,
       async fetch(req, server) {
+        const forwarded = hasProxyHeaders(req.headers);
+        const trustedLoopback = loopback && !forwarded;
         const allowedHosts = getAllowedHosts(tailscaleIPs(), tailnet, HOST, osHostname());
         for (const host of PROXY_HOSTS) allowedHosts.add(host);
         const hostHeader = req.headers.get("host");
@@ -103,7 +109,15 @@ function startHub() {
 
         // Phone access switch: only from this machine's own pages, never remotely.
         if (p === "/api/remote") {
-          if (remote || !loopback) return withReferrerPolicy(new Response("not found", { status: 404 }));
+          if (
+            remote ||
+            PROXY_HOSTS.size > 0 ||
+            forwarded ||
+            !isLoopbackHost(hostHeader, PORT) ||
+            !isLoopbackOrigin(req.headers.get("origin"), hostHeader, PORT)
+          ) {
+            return withReferrerPolicy(new Response("forbidden", { status: 403 }));
+          }
           if (req.method === "POST") {
             if (!req.headers.get("content-type")?.includes("application/json"))
               return withReferrerPolicy(new Response("expected JSON", { status: 415 }));
@@ -126,7 +140,7 @@ function startHub() {
             hasRemoteCookie(req)
           : TOKEN
             ? matches(givenToken(req, url), TOKEN)
-            : loopback;
+            : trustedLoopback;
         if ((api || remote) && !authorized) return withReferrerPolicy(new Response("unauthorized", { status: 401 }));
 
         if (api) {

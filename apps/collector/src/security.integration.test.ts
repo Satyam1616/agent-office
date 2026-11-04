@@ -16,12 +16,12 @@ function reservePort(): number {
   return port!;
 }
 
-async function waitUntilReady() {
+async function waitUntilReady(portToCheck = port, token = TOKEN) {
   const deadline = Date.now() + 10_000;
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/api/health?token=${TOKEN}`, {
-        headers: { host: `127.0.0.1:${port}` },
+      const response = await fetch(`http://127.0.0.1:${portToCheck}/api/health?token=${token}`, {
+        headers: { host: `127.0.0.1:${portToCheck}` },
       });
       if (response.ok) return;
     } catch {}
@@ -76,6 +76,7 @@ describe("collector live HTTP and WebSocket security", () => {
         HOST: "127.0.0.1",
         PORT: String(port),
         TOKEN,
+        ALLOWED_HOSTS: "proxy.example.test",
         DB_PATH: join(tempDir, "collector.db"),
         NODE_ENV: "production",
       },
@@ -117,5 +118,81 @@ describe("collector live HTTP and WebSocket security", () => {
     // The two backend clients deliberately omit Origin.
     expect(await websocketStatus({ host: goodHost, path: `/ws?peer=1&token=${TOKEN}` })).toBe(101);
     expect(await websocketStatus({ host: goodHost, path: `/ingest?token=${TOKEN}` })).toBe(101);
+  });
+
+  it("rejects GET and POST /api/remote via a proxy Host without returning the token", async () => {
+    const host = `proxy.example.test:${port}`;
+    const origin = `http://${host}`;
+    for (const method of ["GET", "POST"] as const) {
+      const response = await fetch(`http://127.0.0.1:${port}/api/remote`, {
+        method,
+        headers: {
+          host,
+          origin,
+          "x-forwarded-for": "203.0.113.20",
+          ...(method === "POST" ? { "content-type": "application/json" } : {}),
+        },
+        ...(method === "POST" ? { body: JSON.stringify({ enabled: true }) } : {}),
+      });
+      const body = await response.text();
+      expect(response.status).toBe(403);
+      expect(body).not.toContain(TOKEN);
+    }
+  });
+
+  it("does not grant loopback trust when proxy headers are present", async () => {
+    const portWithoutToken = reservePort();
+    const dir = mkdtempSync(join(tmpdir(), "agent-office-forwarded-"));
+    const local = Bun.spawn(["bun", "run", "apps/collector/src/index.ts"], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        HOST: "127.0.0.1",
+        PORT: String(portWithoutToken),
+        TOKEN: "",
+        ALLOWED_HOSTS: "",
+        DB_PATH: join(dir, "collector.db"),
+        NODE_ENV: "production",
+      },
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    try {
+      await waitUntilReady(portWithoutToken, "");
+      for (const [name, value] of [
+        ["x-forwarded-for", "127.0.0.1"],
+        ["forwarded", "for=127.0.0.1"],
+        ["via", "1.1 local-proxy"],
+      ]) {
+        const response = await fetch(`http://127.0.0.1:${portWithoutToken}/api/health`, {
+          headers: {
+            host: `127.0.0.1:${portWithoutToken}`,
+            origin: `http://127.0.0.1:${portWithoutToken}`,
+            [name]: value,
+          },
+        });
+        expect(response.status).toBe(401);
+      }
+    } finally {
+      local.kill();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("refuses to start with ALLOWED_HOSTS and no token", async () => {
+    const childWithoutToken = Bun.spawn(["bun", "run", "apps/collector/src/index.ts"], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        HOST: "127.0.0.1",
+        PORT: String(reservePort()),
+        TOKEN: "",
+        ALLOWED_HOSTS: "proxy.example.test",
+        DB_PATH: join(tmpdir(), `agent-office-proxy-${crypto.randomUUID()}.db`),
+      },
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    expect(await childWithoutToken.exited).toBe(1);
   });
 });

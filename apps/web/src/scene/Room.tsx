@@ -1,7 +1,7 @@
-import { Html } from "@react-three/drei";
 import { useMemo } from "react";
 import { Color } from "three";
 import { AGENT_META, type AgentKind, type SessionState } from "../agents";
+import { Html } from "./Html";
 import { door, ROOM_W, type RoomPlan } from "./layout";
 import { Dot, muted, RoomSign } from "../ui/labels";
 

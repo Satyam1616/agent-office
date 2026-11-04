@@ -1,8 +1,8 @@
-import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { MathUtils, type Group } from "three";
 import type { Activity, SessionStatus } from "../agents";
+import { Html } from "./Html";
 import { Bubble, LabelStack, Tag } from "../ui/labels";
 import type { Vec3 } from "./layout";
 

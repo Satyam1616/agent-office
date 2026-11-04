@@ -1,4 +1,3 @@
-import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import type { Mesh } from "three";
@@ -7,6 +6,7 @@ import { Ico, IdleIcon, RoleLabel, WorkText } from "../ui/icons";
 import { ROLE_META, ROLES, roleFor, type Role } from "../roles";
 import { useMultiMachine } from "../store";
 import { MachineName, muted, PodSign } from "../ui/labels";
+import { Html } from "./Html";
 import { Character } from "./Character";
 import { RobotCharacter } from "./RobotCharacter";
 import { Desk } from "./Desk";

@@ -1,12 +1,24 @@
 import { describe, expect, it } from "bun:test";
-import { getAllowedHosts, isAllowedHost, isAllowedOrigin, normalizeHost } from "./security";
+import {
+  getAllowedHosts,
+  hasProxyHeaders,
+  isAllowedHost,
+  isAllowedOrigin,
+  isLoopbackHost,
+  isLoopbackOrigin,
+  normalizeHost,
+} from "./security";
 
 describe("collector request allowlist", () => {
   const allowed = getAllowedHosts(["100.64.0.5"], undefined, "0.0.0.0", "laptop");
 
   it("normalizes hostnames and IPv6 authorities", () => {
     expect(normalizeHost("localhost:4747")).toBe("localhost");
+    expect(normalizeHost("::1")).toBe("::1");
+    expect(normalizeHost("2001:db8::1")).toBe("2001:db8::1");
     expect(normalizeHost("[::1]:4747")).toBe("::1");
+    expect(normalizeHost("[2001:db8::1]")).toBe("2001:db8::1");
+    expect(normalizeHost("[2001:db8::1]:4747")).toBe("2001:db8::1");
     expect(isAllowedHost("localhost:4747", allowed)).toBe(true);
     expect(isAllowedHost("[::1]:4747", allowed)).toBe(true);
     expect(isAllowedHost("100.64.0.5:4747", allowed)).toBe(true);
@@ -46,14 +58,26 @@ describe("collector request allowlist", () => {
     expect(isAllowedOrigin("javascript:void(0)", allowed)).toBe(false);
   });
 
-  it("allows the tailnet MagicDNS name and its short name from cached state", () => {
+  it("allows the current Tailscale IP and machine name before polling, then refreshes IP and MagicDNS", () => {
+    let dns: string | null = null;
+    let ips = new Set(["100.64.0.8"]);
     const tailnet = {
-      selfDns: () => "laptop.tail1234.ts.net",
-      selfIps: () => new Set(["100.64.0.8"]),
+      selfDns: () => dns,
+      selfIps: () => ips,
     } as never;
-    const tailnetHosts = getAllowedHosts([], tailnet);
-    expect(isAllowedHost("laptop:4747", tailnetHosts)).toBe(true);
-    expect(isAllowedHost("laptop.tail1234.ts.net:4747", tailnetHosts)).toBe(true);
+
+    const beforeFirstPoll = getAllowedHosts([], tailnet, undefined, "laptop");
+    expect(isAllowedHost("100.64.0.8:4747", beforeFirstPoll)).toBe(true);
+    expect(isAllowedHost("laptop:4747", beforeFirstPoll)).toBe(true);
+    expect(isAllowedHost("laptop.tail1234.ts.net:4747", beforeFirstPoll)).toBe(false);
+
+    ips = new Set(["100.64.0.19"]);
+    dns = "laptop.tail1234.ts.net";
+    const afterAddressChange = getAllowedHosts([], tailnet, undefined, "laptop");
+    expect(isAllowedHost("100.64.0.19:4747", afterAddressChange)).toBe(true);
+    expect(isAllowedHost("100.64.0.8:4747", afterAddressChange)).toBe(false);
+    expect(isAllowedHost("laptop:4747", afterAddressChange)).toBe(true);
+    expect(isAllowedHost("laptop.tail1234.ts.net:4747", afterAddressChange)).toBe(true);
   });
 
   it("allows trusted Tauri origins", () => {
@@ -62,5 +86,17 @@ describe("collector request allowlist", () => {
     expect(isAllowedOrigin("https://tauri.localhost", allowed)).toBe(true);
     expect(isAllowedOrigin("tauri://evil.example", allowed)).toBe(false);
     expect(isAllowedOrigin("https://tauri.localhost.evil.example", allowed)).toBe(false);
+  });
+
+  it("requires loopback Host and Origin authorities for the phone settings endpoint", () => {
+    expect(isLoopbackHost("127.0.0.1:4747", 4747)).toBe(true);
+    expect(isLoopbackHost("office.example.com:4747", 4747)).toBe(false);
+    expect(isLoopbackOrigin("http://127.0.0.1:4747", "127.0.0.1:4747", 4747)).toBe(true);
+    expect(isLoopbackOrigin("http://office.example.com:4747", "office.example.com:4747", 4747)).toBe(false);
+    expect(isLoopbackOrigin(null, "127.0.0.1:4747", 4747)).toBe(false);
+    expect(hasProxyHeaders(new Headers({ "x-forwarded-for": "127.0.0.1" }))).toBe(true);
+    expect(hasProxyHeaders(new Headers({ forwarded: "for=127.0.0.1" }))).toBe(true);
+    expect(hasProxyHeaders(new Headers({ via: "1.1 proxy" }))).toBe(true);
+    expect(hasProxyHeaders(new Headers())).toBe(false);
   });
 });

@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "bun --watch src/index.ts --dev",
-    "dev:demo": "bun src/index.ts --demo",
+    "dev:demo": "bun src/index.ts --demo --dev",
     "start": "bun src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test"

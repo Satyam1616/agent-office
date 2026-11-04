@@ -8,6 +8,12 @@ running commands, browsing, planning, delegating to subagents, waiting for you, 
 **Download:** grab the installer for Windows (`.exe` / `.msi`), Linux (`.deb` / `.rpm` /
 `.AppImage`) or Android (`.apk`) from [Releases](https://github.com/bimaadam/agent-office/releases).
 
+## Preview
+
+![Agent Office desktop in factory demo mode](docs/demo-factory-desktop.png)
+
+![Agent Office mobile in factory demo mode](docs/demo-factory-mobile.png)
+
 ## A team per session
 
 Each session shows up as a pod of 6 characters. Every tool call is handled by the character
@@ -96,6 +102,12 @@ or 443 for HTTPS). Configure the proxy to restrict access and terminate HTTPS; t
 checks the public hostname and Origin but does not itself provide TLS. Set `TOKEN` for viewers
 coming through the proxy and pass it to the collector as `?token=...` (the collector also accepts
 `Authorization: Bearer ...`).
+
+Setting `ALLOWED_HOSTS` without a 16-character `TOKEN` prevents the collector from starting.
+Requests carrying `X-Forwarded-For`, `Forwarded`, or `Via` are never treated as loopback for
+authorization. `/api/remote` requires a direct loopback Host and Origin and is disabled whenever
+`ALLOWED_HOSTS` is configured, so a reverse proxy cannot expose the phone and device-sharing
+control endpoint.
 
 On Tailscale, the machine's short hostname is accepted immediately, including while the initial
 Tailscale status poll is running. Its full MagicDNS name and Tailscale IPs are added from the
