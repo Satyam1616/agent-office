@@ -1,6 +1,6 @@
 [package]
 name = "agent-office-mobile"
-version = "0.4.0-3"
+version = "0.4.0-4"
 description = "Agent Office viewer for Android"
 edition = "2021"
 

@@ -11,6 +11,12 @@
     </style>
   </head>
   <body>
-    <div><span class="dot"></span>Starting Agent Office…</div>
+    <div id="status"><span class="dot"></span>Starting Agent Office…</div>
+    <script>
+      if (new URLSearchParams(location.search).has("error")) {
+        document.getElementById("status").textContent =
+          "Agent Office could not start its collector. Check the app logs and local security software.";
+      }
+    </script>
   </body>
 </html>

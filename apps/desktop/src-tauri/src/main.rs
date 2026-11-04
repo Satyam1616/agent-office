@@ -43,8 +43,7 @@ fn healthy(port: u16) -> bool {
         return false;
     };
     let _ = s.set_read_timeout(Some(Duration::from_millis(1000)));
-    if s
-        .write_all(b"GET /api/health HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n")
+    if s.write_all(b"GET /api/health HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n")
         .is_err()
     {
         return false;
@@ -66,7 +65,10 @@ fn pick_port() -> u16 {
         .unwrap_or(DEFAULT_PORT)
 }
 
-fn spawn_collector(app: &tauri::App, port: u16) -> Result<CommandChild, Box<dyn std::error::Error>> {
+fn spawn_collector(
+    app: &tauri::App,
+    port: u16,
+) -> Result<CommandChild, Box<dyn std::error::Error>> {
     let web = app.path().resource_dir()?.join("web");
     let data = app.path().app_data_dir()?;
     std::fs::create_dir_all(&data)?;
@@ -155,45 +157,44 @@ fn main() {
         .invoke_handler(tauri::generate_handler![set_close_to_tray])
         .setup(|app| {
             let hidden = std::env::args().any(|a| a == HIDDEN_ARG);
-            let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
-                .title("Agent Office")
-                .inner_size(1440.0, 900.0)
-                .min_inner_size(900.0, 600.0)
-                .visible(!hidden)
-                .build()?;
-
             // Without a tray (e.g. no appindicator on Linux) closing must really quit.
             match build_tray(app) {
                 Ok(()) => app.state::<Tray>().available.store(true, Ordering::Relaxed),
                 Err(e) => eprintln!("[desktop] no tray icon: {e}"),
             }
 
-            // Reuse a collector that is already running (e.g. `bun run dev` inside WSL).
+            // Start or reuse the collector before creating the WebView. Opening it on its
+            // final URL avoids a Windows WebView2 handoff from the bundled splash page.
             let port = if healthy(DEFAULT_PORT) {
-                DEFAULT_PORT
+                Some(DEFAULT_PORT)
             } else {
                 let port = pick_port();
-                let child = spawn_collector(app, port)?;
-                *app.state::<Collector>().0.lock().unwrap() = Some(child);
-                port
+                match spawn_collector(app, port) {
+                    Ok(child) => {
+                        *app.state::<Collector>().0.lock().unwrap() = Some(child);
+                        let deadline = Instant::now() + Duration::from_secs(30);
+                        while !healthy(port) && Instant::now() < deadline {
+                            sleep(Duration::from_millis(200));
+                        }
+                        healthy(port).then_some(port)
+                    }
+                    Err(e) => {
+                        eprintln!("[desktop] failed to spawn collector: {e}");
+                        None
+                    }
+                }
             };
 
-            std::thread::spawn(move || {
-                let deadline = Instant::now() + Duration::from_secs(30);
-                while !healthy(port) && Instant::now() < deadline {
-                    sleep(Duration::from_millis(200));
-                }
-                if !healthy(port) {
-                    let _ = window.eval(
-                        "document.body.innerText = 'The collector did not start. Is port 4747 blocked?'",
-                    );
-                    return;
-                }
-                let url = format!("http://127.0.0.1:{port}/");
-                if let Ok(url) = url.parse() {
-                    let _ = window.navigate(url);
-                }
-            });
+            let url = match port {
+                Some(port) => WebviewUrl::External(format!("http://127.0.0.1:{port}/").parse()?),
+                None => WebviewUrl::App("index.html?error=collector".into()),
+            };
+            WebviewWindowBuilder::new(app, "main", url)
+                .title("Agent Office")
+                .inner_size(1440.0, 900.0)
+                .min_inner_size(900.0, 600.0)
+                .visible(!hidden)
+                .build()?;
             Ok(())
         })
         .on_window_event(|window, event| {
