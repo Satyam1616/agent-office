@@ -30,6 +30,20 @@ async function waitUntilReady(portToCheck = port, token = TOKEN) {
   throw new Error("collector failed to start within 10 seconds");
 }
 
+async function stopCollector(process: ReturnType<typeof Bun.spawn>, directory: string) {
+  process.kill();
+  await process.exited;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
+      rmSync(directory, { recursive: true, force: true });
+      return;
+    } catch {
+      await Bun.sleep(100);
+    }
+  }
+  rmSync(directory, { recursive: true, force: true });
+}
+
 function websocketStatus(options: { host: string; origin?: string; path?: string }): Promise<number> {
   return new Promise((resolve, reject) => {
     const socket = createConnection({ host: "127.0.0.1", port });
@@ -86,9 +100,8 @@ describe("collector live HTTP and WebSocket security", () => {
     await waitUntilReady();
   }, 15_000);
 
-  afterAll(() => {
-    child?.kill();
-    if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+  afterAll(async () => {
+    if (child && tempDir) await stopCollector(child, tempDir);
   });
 
   it("enforces Host and Origin for HTTP and WebSocket, while allowing clients without Origin", async () => {
@@ -174,8 +187,7 @@ describe("collector live HTTP and WebSocket security", () => {
         expect(response.status).toBe(401);
       }
     } finally {
-      local.kill();
-      rmSync(dir, { recursive: true, force: true });
+      await stopCollector(local, dir);
     }
   });
 
