@@ -275,4 +275,5 @@ rather than a public issue. [SECURITY.md](SECURITY.md) describes what the collec
 
 ## License
 
-[Apache-2.0](LICENSE). Bundled models and sounds are CC0 — see [Credits](#credits).
+Copyright 2026 bimaadam. Licensed under [Apache-2.0](LICENSE).
+Bundled models and sounds are CC0 — see [Credits](#credits).
