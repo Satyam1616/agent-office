@@ -2,7 +2,7 @@
 # Repackages the .deb from GitHub Releases. Sound and media use Arch's own GStreamer.
 pkgname=agent-office-bin
 _name=agent-office
-pkgver=0.3.5
+pkgver=0.4.0
 pkgrel=1
 pkgdesc='3D live view of your coding agents (Claude Code, Codex, Gemini, Qwen, Copilot, Kiro, OpenCode)'
 arch=('x86_64')
@@ -15,7 +15,7 @@ conflicts=("$_name")
 # The collector is a `bun build --compile` binary: stripping it cuts off the bundled script.
 options=('!strip' '!debug')
 source=("Agent.Office_${pkgver}_amd64.deb::$url/releases/download/v$pkgver/Agent.Office_${pkgver}_amd64.deb")
-sha256sums=('40d5a5915feebe54cb5312957b31ce8db3246e22e6030470a712f86b567a4975')
+sha256sums=('dbe6e74e7d0f58684e01f5f442ca7be462d728257d349be3037f101b23490d0f')
 
 package() {
   bsdtar -xf data.tar.* -C "$pkgdir"
