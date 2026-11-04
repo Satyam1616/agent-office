@@ -43,6 +43,7 @@ export class Tailnet {
   private devices: Device[] = [];
   private ownIPs = new Set<string>();
   private selfIPs = new Set<string>();
+  private selfDnsName: string | null = null;
   /** Why there's no device list, if there isn't one. */
   problem?: string = "not checked yet";
 
@@ -66,6 +67,7 @@ export class Tailnet {
     }
     this.problem = undefined;
     const me = st.Self.UserID;
+    this.selfDnsName = st.Self.DNSName ? st.Self.DNSName.replace(/\.$/, "") : null;
     const v4 = (n: Node) => n.TailscaleIPs?.find((ip) => ip.includes("."));
     // Tagged devices (servers) have no user; only devices signed in as you count.
     const mine = Object.values(st.Peer ?? {}).filter((n) => n.UserID === me && v4(n));
@@ -84,11 +86,22 @@ export class Tailnet {
     this.devices = [];
     this.ownIPs.clear();
     this.selfIPs.clear();
+    this.selfDnsName = null;
   }
 
   /** Your other devices (not this one). */
   list(): Device[] {
     return this.devices;
+  }
+
+  /** MagicDNS name of this machine if known. */
+  selfDns(): string | null {
+    return this.selfDnsName;
+  }
+
+  /** Tailscale IPs of this machine. */
+  selfIps(): Set<string> {
+    return this.selfIPs;
   }
 
   /** Is this connecting address one of your own devices (or this machine)? */

@@ -14,8 +14,9 @@ import { History } from "./history";
 import { homes } from "./homes";
 import { startRelay } from "./relay";
 import { Peers, type DeviceStatus } from "./peers";
-import { RemoteAccess, type RemoteStatus } from "./remote";
+import { RemoteAccess, tailscaleIPs, type RemoteStatus } from "./remote";
 import { ReplayPlayer } from "./replay";
+import { getAllowedHosts, isAllowedHost, isAllowedOrigin } from "./security";
 import { SESSION_TTL_MS, SessionStore } from "./state";
 import { JsonlTailer } from "./tail";
 import { Tailnet } from "./tailnet";
@@ -35,7 +36,6 @@ const DB_PATH =
   process.env.DB_PATH ?? (COMPILED ? join(homedir(), ".agent-office.db") : join(import.meta.dir, "..", "agent-office.db"));
 /** Phone access on/off and its token, next to the history db. */
 const REMOTE_PATH = DB_PATH.replace(/\.db$/, "") + ".remote.json";
-const LOCAL_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/;
 
 function watchLogs(emit: (e: AgentEvent, live: boolean) => void) {
   console.log(`[collector] following agent logs in: ${homes().join(", ")}`);
@@ -71,20 +71,10 @@ function startHub() {
   const givenToken = (req: Request, url: URL) =>
     url.searchParams.get("token") ?? req.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
 
-  /**
-   * On a loopback server, only pages from this machine: otherwise any website open in
-   * your browser could connect to ws://127.0.0.1 and read your sessions (or use DNS
-   * rebinding to look like localhost).
-   */
-  const fromThisMachine = (req: Request) => {
-    const origin = req.headers.get("origin");
-    let originHost = "";
-    try {
-      originHost = origin ? new URL(origin).host : "";
-    } catch {
-      return false;
-    }
-    return LOCAL_HOST.test(req.headers.get("host") ?? "") && (!origin || LOCAL_HOST.test(originHost));
+  const tailnet = new Tailnet();
+  const withReferrerPolicy = (res: Response) => {
+    res.headers.set("referrer-policy", "no-referrer");
+    return res;
   };
 
   // viewer: this office (incl. other devices); peer: another device of yours, which only gets our own sessions.
@@ -96,17 +86,23 @@ function startHub() {
       hostname,
       port: PORT,
       async fetch(req, server) {
+        const allowedHosts = getAllowedHosts(tailscaleIPs(), tailnet, HOST);
+        if (!isAllowedHost(req.headers.get("host"), allowedHosts)) {
+          return withReferrerPolicy(new Response("forbidden host", { status: 403 }));
+        }
+        if (!isAllowedOrigin(req.headers.get("origin"), allowedHosts)) {
+          return withReferrerPolicy(new Response("forbidden origin", { status: 403 }));
+        }
+
         const url = new URL(req.url);
         const p = url.pathname;
 
-        if (!remote && loopback && !fromThisMachine(req)) return new Response("forbidden", { status: 403 });
-
         // Phone access switch: only from this machine's own pages, never remotely.
         if (p === "/api/remote") {
-          if (remote || !loopback) return new Response("not found", { status: 404 });
+          if (remote || !loopback) return withReferrerPolicy(new Response("not found", { status: 404 }));
           if (req.method === "POST") {
             if (!req.headers.get("content-type")?.includes("application/json"))
-              return new Response("expected JSON", { status: 415 });
+              return withReferrerPolicy(new Response("expected JSON", { status: 415 }));
             const body = (await req.json().catch(() => ({}))) as { enabled?: boolean; rotate?: boolean };
             if (body.rotate) remoteAccess.rotate();
             if (typeof body.enabled === "boolean") {
@@ -114,7 +110,7 @@ function startHub() {
               await syncDevices();
             }
           }
-          return Response.json(sharingStatus());
+          return withReferrerPolicy(Response.json(sharingStatus()));
         }
 
         const api = p === "/ws" || p === "/ingest" || p.startsWith("/api/");
@@ -127,20 +123,20 @@ function startHub() {
           : TOKEN
             ? matches(givenToken(req, url), TOKEN)
             : loopback;
-        if ((api || remote) && !authorized) return new Response("unauthorized", { status: 401 });
+        if ((api || remote) && !authorized) return withReferrerPolicy(new Response("unauthorized", { status: 401 }));
 
         if (api) {
           // Relays push into the office, so they must always present a token.
-          if (p === "/ingest" && !TOKEN && !remote) return new Response("hub has no TOKEN set", { status: 403 });
+          if (p === "/ingest" && !TOKEN && !remote) return withReferrerPolicy(new Response("hub has no TOKEN set", { status: 403 }));
           if (p === "/ws" || p === "/ingest") {
             const q = url.searchParams;
             const data: WsData = { role: p === "/ingest" ? "relay" : q.has("replay") ? "replay" : q.has("peer") ? "peer" : "viewer" };
-            return server.upgrade(req, { data }) ? undefined : new Response("upgrade failed", { status: 400 });
+            return server.upgrade(req, { data }) ? undefined : withReferrerPolicy(new Response("upgrade failed", { status: 400 }));
           }
-          if (p === "/api/stats") return Response.json(history.stats());
-          if (p === "/api/history") return Response.json(history.extent());
-          if (p === "/api/health") return Response.json({ ok: true, demo: DEMO, machine: MACHINE });
-          return new Response("not found", { status: 404 });
+          if (p === "/api/stats") return withReferrerPolicy(Response.json(history.stats()));
+          if (p === "/api/history") return withReferrerPolicy(Response.json(history.extent()));
+          if (p === "/api/health") return withReferrerPolicy(Response.json({ ok: true, demo: DEMO, machine: MACHINE }));
+          return withReferrerPolicy(new Response("not found", { status: 404 }));
         }
 
         // Built web app (`bun run build`), so remote viewers need only this one port.
@@ -152,9 +148,9 @@ function startHub() {
               : new Response(Bun.file(join(WEB_DIST, "index.html")));
           if (remote && url.searchParams.has("token"))
             res.headers.append("set-cookie", `ao_token=${remoteAccess.token}; Path=/; HttpOnly; SameSite=Strict`);
-          return res;
+          return withReferrerPolicy(res);
         }
-        return new Response("agent-office collector (run `bun run build` to serve the web app here)", { status: 404 });
+        return withReferrerPolicy(new Response("agent-office collector (run `bun run build` to serve the web app here)", { status: 404 }));
       },
       websocket: {
         open(ws) {
@@ -219,7 +215,6 @@ function startHub() {
   });
 
   // ── Your other devices over Tailscale (only while sharing is on) ──
-  const tailnet = new Tailnet();
   const peers = new Peers(
     tailnet,
     PORT,

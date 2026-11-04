@@ -5,6 +5,7 @@
   "workspaces": [
     "apps/*"
   ],
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "bun run --filter '*' dev",
     "dev:demo": "bun run --filter @agent-office/collector dev:demo & bun run --filter @agent-office/web dev",
@@ -13,6 +14,7 @@
     "dev:collector": "bun run --filter @agent-office/collector dev",
     "dev:web": "bun run --filter @agent-office/web dev",
     "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun test",
     "build": "bun run --filter '*' build",
     "app:dev": "bun run --filter @agent-office/desktop app:dev",
     "app:build": "bun run --filter @agent-office/desktop app:build"

@@ -2,9 +2,15 @@ import { create } from "zustand";
 import type { FeedItem, ServerMessage, SessionState, Stats } from "./agents";
 import type { HistoryExtent, ReplayCommand } from "../../collector/src/types";
 import { THEMES, type Theme } from "./roles";
+import { isDemoMode, startStaticDemo } from "./demo";
+
+const getParam = (key: string) =>
+  typeof location !== "undefined" ? new URLSearchParams(location.search).get(key) : null;
+const getStored = (key: string) =>
+  typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
 
 const THEME_KEY = "agent-office-theme";
-const requested = new URLSearchParams(location.search).get("theme") ?? localStorage.getItem(THEME_KEY);
+const requested = getParam("theme") ?? getStored(THEME_KEY);
 const initialTheme: Theme = THEMES.includes(requested as Theme) ? (requested as Theme) : "office";
 
 export type Mode = "live" | "replay";
@@ -41,11 +47,11 @@ export const useOffice = create<OfficeState>((set) => ({
   select: (selected) => set({ selected }),
   theme: initialTheme,
   setTheme: (theme) => {
-    localStorage.setItem(THEME_KEY, theme);
+    if (typeof localStorage !== "undefined") localStorage.setItem(THEME_KEY, theme);
     set({ theme });
   },
   // `?mode=replay` opens straight into playback (shareable link).
-  mode: new URLSearchParams(location.search).get("mode") === "replay" ? "replay" : "live",
+  mode: getParam("mode") === "replay" ? "replay" : "live",
   replay: null,
   history: null,
 }));
@@ -80,9 +86,19 @@ function handle(msg: ServerMessage) {
 
 /** Hub token from `?token=` (remembered so the URL can be shared without it afterwards). */
 function token(): string {
+  if (typeof location === "undefined") return "";
   const fromUrl = new URLSearchParams(location.search).get("token");
-  if (fromUrl) localStorage.setItem("agent-office-token", fromUrl);
-  return fromUrl ?? localStorage.getItem("agent-office-token") ?? "";
+  if (fromUrl) {
+    if (typeof localStorage !== "undefined") localStorage.setItem("agent-office-token", fromUrl);
+    try {
+      if (typeof window !== "undefined") {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("token");
+        window.history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+      }
+    } catch {}
+  }
+  return fromUrl ?? (typeof localStorage !== "undefined" ? localStorage.getItem("agent-office-token") : "") ?? "";
 }
 
 const withToken = (path: string, extra = "") => {
@@ -102,6 +118,25 @@ let socket: WebSocket | null = null;
 
 /** One socket at a time: the shared live office, or a private replay of recorded history. */
 export function connect(mode: Mode = useOffice.getState().mode) {
+  if (isDemoMode()) {
+    startStaticDemo(handle, () => {
+      useOffice.setState({
+        connected: true,
+        stats: {
+          today: {
+            claude: 15,
+            codex: 10,
+            gemini: 18,
+            qwen: 7,
+            copilot: 12,
+            kiro: 6,
+            opencode: 9,
+          },
+        },
+      });
+    });
+    return;
+  }
   const proto = location.protocol === "https:" ? "wss" : "ws";
   const ws = new WebSocket(`${proto}://${location.host}${withToken("/ws", mode === "replay" ? "replay=1" : "")}`);
   socket = ws;
@@ -115,6 +150,7 @@ export function connect(mode: Mode = useOffice.getState().mode) {
 }
 
 export function setMode(mode: Mode) {
+  if (isDemoMode()) return;
   if (useOffice.getState().mode === mode) return;
   useOffice.setState({ mode, replay: null, sessions: {}, feed: [], selected: null });
   const old = socket;
@@ -128,15 +164,17 @@ export function replayCommand(cmd: ReplayCommand) {
 }
 
 function loadHistoryExtent() {
+  if (isDemoMode()) return;
   fetch(withToken("/api/history"))
     .then((r) => r.json())
     .then((history: HistoryExtent) => useOffice.setState({ history }))
     .catch(() => {});
 }
 
-if (useOffice.getState().mode === "replay") queueMicrotask(loadHistoryExtent);
+if (!isDemoMode() && useOffice.getState().mode === "replay") queueMicrotask(loadHistoryExtent);
 
 export function pollStats() {
+  if (isDemoMode()) return;
   const load = () =>
     fetch(withToken("/api/stats"))
       .then((r) => r.json())
