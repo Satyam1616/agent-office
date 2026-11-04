@@ -13,10 +13,11 @@
   <body>
     <div id="status"><span class="dot"></span>Starting Agent Office…</div>
     <script>
-      if (new URLSearchParams(location.search).has("error")) {
+      window.agentOfficeError = function () {
         document.getElementById("status").textContent =
           "Agent Office could not start its collector. Check the app logs and local security software.";
-      }
+      };
+      if (new URLSearchParams(location.search).has("error")) window.agentOfficeError();
     </script>
   </body>
 </html>
