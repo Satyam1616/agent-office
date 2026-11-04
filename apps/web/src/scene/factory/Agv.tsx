@@ -1,4 +1,3 @@
-import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { Group } from "three";
@@ -6,6 +5,7 @@ import { AGENT_META, type SessionState } from "../../agents";
 import { AgvIcon, Ico, IdleIcon, WorkText } from "../../ui/icons";
 import { Bubble, LabelStack, Tag } from "../../ui/labels";
 import type { Vec3 } from "../layout";
+import { Html } from "../Html";
 import { DARK } from "./machines";
 
 const PATROL = 0.95;

@@ -6,7 +6,13 @@ monitor screens and speech bubbles follow what the agent is doing: reading files
 running commands, browsing, planning, delegating to subagents, waiting for you, or idling.
 
 **Download:** grab the installer for Windows (`.exe` / `.msi`), Linux (`.deb` / `.rpm` /
-`.AppImage`) or Android (`.apk`) from [Releases](https://github.com/bimaadam/agent-office/releases).
+`.AppImage`) or Android (`.apk`) from [Releases](https://github.com/ignitrondev/agent-office/releases).
+
+## Preview
+
+![Agent Office desktop in factory demo mode](docs/demo-factory-desktop.png)
+
+![Agent Office mobile in factory demo mode](docs/demo-factory-mobile.png)
 
 ## A team per session
 
@@ -80,6 +86,34 @@ bun run dev:demo   # fake data for every agent, handy for looking around
 ```
 
 Add `?zoom=40` to the URL to set the initial zoom. Click a character to see its session details.
+
+The collector checks each request's `Host` and browser `Origin` against local, Tailscale, and
+configured hostnames, including the port. The Vite origin on `localhost:5173` is allowed only by
+the collector's development command. Requests from relays and peer collectors may omit `Origin`.
+The collector does not send `Access-Control-Allow-Origin`.
+
+`HOST` controls the address the collector binds to. `HOST=0.0.0.0` listens on every IPv4
+interface and requires a `TOKEN` of at least 16 characters, but it does not make arbitrary Host
+headers valid. LAN IP addresses are not added automatically; plain LAN sharing is unsupported.
+To intentionally serve a known hostname through a reverse proxy, set `ALLOWED_HOSTS` to a
+comma-separated list (for example `ALLOWED_HOSTS=office.example.com`) and have the proxy preserve
+that Host. When the proxy omits a port, the browser Origin must use its standard port (80 for HTTP
+or 443 for HTTPS). Configure the proxy to restrict access and terminate HTTPS; the collector
+checks the public hostname and Origin but does not itself provide TLS. Set `TOKEN` for viewers
+coming through the proxy and pass it to the collector as `?token=...` (the collector also accepts
+`Authorization: Bearer ...`).
+
+Setting `ALLOWED_HOSTS` without a 16-character `TOKEN` prevents the collector from starting.
+Requests carrying `X-Forwarded-For`, `Forwarded`, or `Via` are never treated as loopback for
+authorization. `/api/remote` requires a direct loopback Host and Origin and is disabled whenever
+`ALLOWED_HOSTS` is configured, so a reverse proxy cannot expose the phone and device-sharing
+control endpoint.
+
+On Tailscale, the machine's short hostname is accepted immediately, including while the initial
+Tailscale status poll is running. Its full MagicDNS name and Tailscale IPs are added from the
+cached local status, even when sharing with other devices is off; the collector refreshes that
+status in the background. This lookup is cached by the Tailnet client and does not launch a
+Tailscale process per request.
 
 ## Desktop app (Windows & Linux)
 
@@ -228,3 +262,18 @@ squashy555 (`apps/web/public/sounds/README.md`).
   the Windows app will use it automatically.
 - Installers aren't signed yet, so Windows SmartScreen will ask first ("More info → Run anyway").
 - The "waiting for permission" state is only detected for agents that log it (Codex, Copilot).
+
+## Contributing
+
+Bug reports, adapters for new agents, and fixes are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the setup, the checks CI runs, and how to add an agent.
+Participation is covered by our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Found a security issue? Please use
+[private vulnerability reporting](https://github.com/ignitrondev/agent-office/security/advisories/new)
+rather than a public issue. [SECURITY.md](SECURITY.md) describes what the collector guards and why.
+
+## License
+
+Copyright 2026 bimaadam. Licensed under [Apache-2.0](LICENSE).
+Bundled models and sounds are CC0 — see [Credits](#credits).

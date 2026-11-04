@@ -12,7 +12,7 @@ const TOOLS: Record<AgentKind, string[]> = {
 };
 const FILES = ["src/app.tsx", "api/orders.ts", "db/schema.sql", "README.md", "src/scene/Desk.tsx"];
 const COMMANDS = ["bun test", "git diff --stat", "bunx tsc --noEmit", "bun run dev", "ls -la", "docker compose up -d"];
-const PROJECTS = ["emr-project", "konter-hq", "pos-kasir-demo", "agent-office"];
+const PROJECTS = ["web-platform", "api-server", "desktop-viewer", "agent-office"];
 
 const pick = <T>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)]!;
 
@@ -29,8 +29,14 @@ export function startDemo(emit: (e: AgentEvent, live: boolean) => void) {
   // A couple of subagents working for the first Claude and OpenCode sessions.
   for (const agent of ["claude", "claude", "opencode"] as const) {
     const n = sessions.filter((s) => s.agent === agent && s.parentId).length;
-    sessions.push({ agent, sessionId: `demo-${agent}-sub${n}`, cwd: "/home/demo/emr-project", parentId: `demo-${agent}-0` });
+    sessions.push({ agent, sessionId: `demo-${agent}-sub${n}`, cwd: "/home/demo/web-platform", parentId: `demo-${agent}-0` });
   }
+
+  // Populate each room on start so the office is never empty
+  for (const s of sessions) {
+    emit({ ...s, ts: Date.now(), kind: "thinking" }, true);
+  }
+
   setInterval(() => {
     const s = pick(sessions);
     const roll = Math.random();

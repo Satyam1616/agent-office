@@ -1,5 +1,6 @@
-import { basename } from "node:path";
 import type { AgentEvent, FeedItem, ServerMessage, SessionState } from "./types";
+
+const basename = (p: string) => p.replace(/[/\\]+$/, "").split(/[/\\]/).pop() || p;
 
 export const SESSION_TTL_MS = 20 * 60_000;
 const STALE_MS = 3 * 60_000;

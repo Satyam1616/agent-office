@@ -40,6 +40,8 @@ jobs:
             gstreamer1.0-plugins-base gstreamer1.0-plugins-good
 
       - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun test
 
       - uses: tauri-apps/tauri-action@v0
         env:

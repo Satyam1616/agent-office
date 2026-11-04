@@ -43,10 +43,9 @@ fn healthy(port: u16) -> bool {
         return false;
     };
     let _ = s.set_read_timeout(Some(Duration::from_millis(1000)));
-    if s
-        .write_all(b"GET /api/health HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n")
-        .is_err()
-    {
+    // The collector's host allowlist requires the port: a bare 127.0.0.1 gets a 403.
+    let req = format!("GET /api/health HTTP/1.0\r\nHost: 127.0.0.1:{port}\r\n\r\n");
+    if s.write_all(req.as_bytes()).is_err() {
         return false;
     }
     let mut body = String::new();
@@ -66,7 +65,10 @@ fn pick_port() -> u16 {
         .unwrap_or(DEFAULT_PORT)
 }
 
-fn spawn_collector(app: &tauri::App, port: u16) -> Result<CommandChild, Box<dyn std::error::Error>> {
+fn spawn_collector(
+    app: &tauri::App,
+    port: u16,
+) -> Result<CommandChild, Box<dyn std::error::Error>> {
     let web = app.path().resource_dir()?.join("web");
     let data = app.path().app_data_dir()?;
     std::fs::create_dir_all(&data)?;
@@ -90,6 +92,18 @@ fn spawn_collector(app: &tauri::App, port: u16) -> Result<CommandChild, Box<dyn 
         }
     });
     Ok(child)
+}
+
+/// Flips the splash page into the error state it also renders for `?error=collector`.
+/// Retried off-thread: the webview may still be loading index.html on the first attempt,
+/// and an eval that lands before the page's own script would be lost.
+fn fail_splash(window: tauri::WebviewWindow) {
+    std::thread::spawn(move || {
+        for _ in 0..12 {
+            let _ = window.eval("window.agentOfficeError && window.agentOfficeError()");
+            sleep(Duration::from_millis(250));
+        }
+    });
 }
 
 fn show_main(app: &AppHandle) {
@@ -155,6 +169,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![set_close_to_tray])
         .setup(|app| {
             let hidden = std::env::args().any(|a| a == HIDDEN_ARG);
+            // The window comes first and holds the splash page, so the app is on screen
+            // right away instead of after the collector's startup wait below.
             let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
                 .title("Agent Office")
                 .inner_size(1440.0, 900.0)
@@ -170,30 +186,43 @@ fn main() {
 
             // Reuse a collector that is already running (e.g. `bun run dev` inside WSL).
             let port = if healthy(DEFAULT_PORT) {
-                DEFAULT_PORT
+                Some(DEFAULT_PORT)
             } else {
                 let port = pick_port();
-                let child = spawn_collector(app, port)?;
-                *app.state::<Collector>().0.lock().unwrap() = Some(child);
-                port
+                match spawn_collector(app, port) {
+                    Ok(child) => {
+                        *app.state::<Collector>().0.lock().unwrap() = Some(child);
+                        Some(port)
+                    }
+                    Err(e) => {
+                        eprintln!("[desktop] failed to spawn collector: {e}");
+                        None
+                    }
+                }
             };
 
-            std::thread::spawn(move || {
-                let deadline = Instant::now() + Duration::from_secs(30);
-                while !healthy(port) && Instant::now() < deadline {
-                    sleep(Duration::from_millis(200));
+            // Never block the main thread here: the splash has to keep painting.
+            match port {
+                None => fail_splash(window),
+                Some(port) => {
+                    std::thread::spawn(move || {
+                        let deadline = Instant::now() + Duration::from_secs(30);
+                        while !healthy(port) && Instant::now() < deadline {
+                            sleep(Duration::from_millis(200));
+                        }
+                        if !healthy(port) {
+                            eprintln!("[desktop] collector never answered on port {port}");
+                            return fail_splash(window);
+                        }
+                        match format!("http://127.0.0.1:{port}/").parse() {
+                            Ok(url) => {
+                                let _ = window.navigate(url);
+                            }
+                            Err(e) => eprintln!("[desktop] bad collector url: {e}"),
+                        }
+                    });
                 }
-                if !healthy(port) {
-                    let _ = window.eval(
-                        "document.body.innerText = 'The collector did not start. Is port 4747 blocked?'",
-                    );
-                    return;
-                }
-                let url = format!("http://127.0.0.1:{port}/");
-                if let Ok(url) = url.parse() {
-                    let _ = window.navigate(url);
-                }
-            });
+            }
             Ok(())
         })
         .on_window_event(|window, event| {

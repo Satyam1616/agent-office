@@ -1,4 +1,4 @@
-import { Html, useAnimations, useGLTF } from "@react-three/drei";
+import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Box3, LoopOnce, LoopRepeat, Vector3, type Group, type Mesh, type MeshStandardMaterial } from "three";
@@ -6,11 +6,12 @@ import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js
 import type { SessionStatus } from "../agents";
 import { Bubble, LabelStack, Tag } from "../ui/labels";
 import type { Pose } from "./Character";
+import { Html } from "./Html";
 import type { Vec3 } from "./layout";
 import { useWalker } from "./useWalker";
 
 // CC0 model by Tomás Laulhé (Quaternius), via the three.js examples; see public/models/robot/README.md.
-const MODEL = "/models/robot/RobotExpressive.glb";
+const MODEL = `${import.meta.env.BASE_URL}models/robot/RobotExpressive.glb`;
 const HEIGHT = 1.5;
 const FADE = 0.25;
 

@@ -64,7 +64,7 @@ export const gemini: JsonlAdapter = {
   roots: [{ dir: ".gemini/tmp", pattern: "*/chats/*.jsonl" }],
 
   initCtx(path) {
-    // Fallback project name is the tmp folder, e.g. "emr-project-1" → "emr-project".
+    // Fallback project name is the tmp folder, e.g. "my-project-1" → "my-project".
     const project = basename(dirname(dirname(path))).replace(/-\d+$/, "");
     return { cwd: `/${project}` };
   },

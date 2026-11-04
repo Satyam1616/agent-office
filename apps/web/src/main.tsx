@@ -14,11 +14,13 @@ watchNotifications();
 // The tray behaviour lives in the desktop shell; tell it what the user picked.
 if (isDesktop) void setCloseToTray(useSettings.getState().closeToTray).catch(() => {});
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    {/* Transparent so the 3D scene shows through; panels bring their own glass background. */}
-    <FluentProvider theme={webDarkTheme} style={{ background: "transparent", height: "100%" }}>
-      <App />
-    </FluentProvider>
-  </StrictMode>,
+// Fluent UI's focus manager and the 3D canvas emit teardown errors under dev StrictMode.
+// Production remains wrapped because StrictMode has no double-invocation behavior there.
+const app = (
+  // Transparent so the 3D scene shows through; panels bring their own glass background.
+  <FluentProvider theme={webDarkTheme} style={{ background: "transparent", height: "100%" }}>
+    <App />
+  </FluentProvider>
 );
+
+createRoot(document.getElementById("root")!).render(import.meta.env.DEV ? app : <StrictMode>{app}</StrictMode>);
