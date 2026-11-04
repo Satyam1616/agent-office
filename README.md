@@ -262,3 +262,17 @@ squashy555 (`apps/web/public/sounds/README.md`).
   the Windows app will use it automatically.
 - Installers aren't signed yet, so Windows SmartScreen will ask first ("More info → Run anyway").
 - The "waiting for permission" state is only detected for agents that log it (Codex, Copilot).
+
+## Contributing
+
+Bug reports, adapters for new agents, and fixes are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the setup, the checks CI runs, and how to add an agent.
+Participation is covered by our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Found a security issue? Please use
+[private vulnerability reporting](https://github.com/bimaadam/agent-office/security/advisories/new)
+rather than a public issue. [SECURITY.md](SECURITY.md) describes what the collector guards and why.
+
+## License
+
+[Apache-2.0](LICENSE). Bundled models and sounds are CC0 — see [Credits](#credits).
