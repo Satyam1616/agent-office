@@ -6,7 +6,7 @@ monitor screens and speech bubbles follow what the agent is doing: reading files
 running commands, browsing, planning, delegating to subagents, waiting for you, or idling.
 
 **Download:** grab the installer for Windows (`.exe` / `.msi`), Linux (`.deb` / `.rpm` /
-`.AppImage`) or Android (`.apk`) from [Releases](https://github.com/bimaadam/agent-office/releases).
+`.AppImage`) or Android (`.apk`) from [Releases](https://github.com/ignitrondev/agent-office/releases).
 
 ## Preview
 
@@ -270,7 +270,7 @@ Bug reports, adapters for new agents, and fixes are welcome — see
 Participation is covered by our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 Found a security issue? Please use
-[private vulnerability reporting](https://github.com/bimaadam/agent-office/security/advisories/new)
+[private vulnerability reporting](https://github.com/ignitrondev/agent-office/security/advisories/new)
 rather than a public issue. [SECURITY.md](SECURITY.md) describes what the collector guards and why.
 
 ## License

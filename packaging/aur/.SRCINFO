@@ -2,7 +2,7 @@ pkgbase = agent-office-bin
 	pkgdesc = 3D live view of your coding agents (Claude Code, Codex, Gemini, Qwen, Copilot, Kiro, OpenCode)
 	pkgver = 0.3.5
 	pkgrel = 1
-	url = https://github.com/bimaadam/agent-office
+	url = https://github.com/ignitrondev/agent-office
 	arch = x86_64
 	license = Apache-2.0
 	depends = webkit2gtk-4.1
@@ -15,7 +15,7 @@ pkgbase = agent-office-bin
 	conflicts = agent-office
 	options = !strip
 	options = !debug
-	source = Agent.Office_0.3.5_amd64.deb::https://github.com/bimaadam/agent-office/releases/download/v0.3.5/Agent.Office_0.3.5_amd64.deb
+	source = Agent.Office_0.3.5_amd64.deb::https://github.com/ignitrondev/agent-office/releases/download/v0.3.5/Agent.Office_0.3.5_amd64.deb
 	sha256sums = 40d5a5915feebe54cb5312957b31ce8db3246e22e6030470a712f86b567a4975
 
 pkgname = agent-office-bin

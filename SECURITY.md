@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please report security issues through GitHub's private vulnerability reporting:
-[**Report a vulnerability**](https://github.com/bimaadam/agent-office/security/advisories/new)
+[**Report a vulnerability**](https://github.com/ignitrondev/agent-office/security/advisories/new)
 (Security → Advisories on the repository).
 
 Please do not open a public issue for a vulnerability.

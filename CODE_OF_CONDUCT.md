@@ -53,7 +53,7 @@ as an appointed representative at an online or offline event.
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the
 maintainer of this project through [github.com/bimaadam](https://github.com/bimaadam). If you need
 the report to stay private, you can use GitHub's
-[private reporting](https://github.com/bimaadam/agent-office/security/advisories/new) for this too.
+[private reporting](https://github.com/ignitrondev/agent-office/security/advisories/new) for this too.
 
 All complaints will be reviewed and investigated promptly and fairly.
 

@@ -76,7 +76,7 @@ the collector printed. For the desktop app, running the binary from a terminal s
 collector's output, which is usually where the answer is.
 
 Security issues go through
-[private vulnerability reporting](https://github.com/bimaadam/agent-office/security/advisories/new)
+[private vulnerability reporting](https://github.com/ignitrondev/agent-office/security/advisories/new)
 instead of the issue tracker.
 
 ## License
