@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { askNotifyPermission, CONNECT_PAGE, getAutostart, isDesktop, isMobileApp, setAutostart, setCloseToTray } from "../desktop";
 import { QUALITY, useSettings, type NotifyLevel, type Quality } from "../settings";
 import { sound } from "../sound";
+import { useIsPhone } from "../useIsPhone";
 import { SharingSettings } from "./Sharing";
 import { UpdateSettings } from "./Updates";
 
@@ -26,6 +27,7 @@ const QUALITY_HINT: Record<Quality, string> = {
 
 export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { quality, notify, closeToTray, update } = useSettings();
+  const phone = useIsPhone();
   const [soundOn, setSoundOn] = useState(sound.enabled);
   const [autostart, setAuto] = useState(false);
   useEffect(() => sound.onChange(() => setSoundOn(sound.enabled)), []);
@@ -35,12 +37,12 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <Dialog open={open} onOpenChange={(_, d) => !d.open && onClose()}>
-      <DialogSurface className="max-w-[500px]">
+      <DialogSurface className="settings-dialog">
         <DialogBody>
           <DialogTitle>Settings</DialogTitle>
           <DialogContent className="flex flex-col gap-4">
             <Field label="Graphics" hint={QUALITY_HINT[quality]}>
-              <RadioGroup layout="horizontal" value={quality} onChange={(_, d) => update({ quality: d.value as Quality })}>
+              <RadioGroup layout={phone ? "vertical" : "horizontal"} value={quality} onChange={(_, d) => update({ quality: d.value as Quality })}>
                 {(Object.keys(QUALITY) as Quality[]).map((q) => (
                   <Radio key={q} value={q} label={QUALITY[q].label} />
                 ))}

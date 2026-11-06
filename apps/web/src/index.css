@@ -12,3 +12,53 @@
   /* Menus and dialogs live outside the HUD: keep vertical scrolling, but not page zoom. */
   touch-action: pan-y;
 }
+
+/* Center Settings using viewport units when mobile layout overflow makes the layout
+   viewport wider than the screen. The selectors override Fluent's default sizing. */
+.fui-DialogSurface.settings-dialog {
+  inset: auto;
+  left: 50vw;
+  top: 50dvh;
+  translate: -50% -50%;
+  margin: 0;
+  width: calc(100vw - 2rem);
+  max-width: 500px;
+  max-height: calc(100dvh - 2rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-dialog .fui-DialogBody {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: none;
+}
+
+.settings-dialog .fui-DialogTitle,
+.settings-dialog .fui-DialogActions {
+  flex-shrink: 0;
+}
+
+.settings-dialog .fui-DialogActions {
+  justify-content: flex-end;
+}
+
+.settings-dialog .fui-DialogContent {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.settings-dialog .fui-Field {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 767px) {
+  .fui-DialogSurface.settings-dialog {
+    padding: 1rem;
+  }
+}
