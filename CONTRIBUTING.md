@@ -43,6 +43,11 @@ passing.
 | `apps/desktop`   | Tauri app for Windows and Linux, bundles the collector as a sidecar  |
 | `apps/mobile`    | Tauri Android app, a thin viewer                                     |
 | `packaging/aur`  | Arch package that repackages the released `.deb`                     |
+| `docs/adr`       | Why the project is shaped the way it is                              |
+
+If you are about to propose a different shape for part of the project — a native Android
+app, a different UI library — read [`docs/adr`](docs/adr/) first. The decision may already
+be recorded there, along with what would have to change for it to be worth revisiting.
 
 ## Adding an agent
 
