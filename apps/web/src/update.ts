@@ -49,6 +49,20 @@ export async function installUpdate(onProgress: (received: number, total?: numbe
   }
 }
 
+/**
+ * The version of the installed desktop app, or null elsewhere. Not shown in the Android viewer:
+ * the page there belongs to the hub, so the APK's own version would read as the hub's.
+ */
+export async function appVersion(): Promise<string | null> {
+  if (!isDesktop) return null;
+  try {
+    const { getVersion } = await import("@tauri-apps/api/app");
+    return await getVersion();
+  } catch {
+    return null;
+  }
+}
+
 /** Restarts into the version just installed. */
 export async function restartApp(): Promise<void> {
   const { relaunch } = await import("@tauri-apps/plugin-process");
