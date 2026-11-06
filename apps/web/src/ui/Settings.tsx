@@ -16,6 +16,7 @@ import { askNotifyPermission, CONNECT_PAGE, getAutostart, isDesktop, isMobileApp
 import { QUALITY, useSettings, type NotifyLevel, type Quality } from "../settings";
 import { sound } from "../sound";
 import { SharingSettings } from "./Sharing";
+import { UpdateSettings } from "./Updates";
 
 const QUALITY_HINT: Record<Quality, string> = {
   high: "Sharpest on HiDPI screens, full effects, always 60 fps.",
@@ -67,6 +68,8 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
             />
 
             <SharingSettings />
+
+            <UpdateSettings open={open} />
 
             {isMobileApp && (
               <Field label="Hub" hint={location.host}>

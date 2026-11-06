@@ -46,12 +46,20 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the updater artifacts. Without these the build still produces installers,
+          # but no .sig files, and the updater refuses an unsigned update.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: apps/desktop
           tauriScript: bun run tauri
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           releaseName: Agent Office ${{ github.ref_name }}
           releaseDraft: true
+          # We ship both NSIS and WiX. The updater must take the NSIS route: only its
+          # installer stops the collector sidecar first (installer-hooks.nsh), and WiX would
+          # otherwise be picked by default.
+          updaterJsonPreferNsis: true
 
       - uses: actions/upload-artifact@v4
         with:
