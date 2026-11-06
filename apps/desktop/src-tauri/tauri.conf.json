@@ -17,6 +17,7 @@
     "targets": ["deb", "rpm", "appimage", "nsis", "msi"],
     "category": "DeveloperTool",
     "linux": { "appimage": { "bundleMediaFramework": true } },
+    "windows": { "nsis": { "installerHooks": "./installer-hooks.nsh" } },
     "shortDescription": "3D live view of your coding agents",
     "externalBin": ["binaries/agent-office-collector"],
     "resources": { "../../web/dist/": "web/" },
