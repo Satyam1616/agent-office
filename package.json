@@ -18,5 +18,8 @@
     "build": "bun run --filter '*' build",
     "app:dev": "bun run --filter @agent-office/desktop app:dev",
     "app:build": "bun run --filter @agent-office/desktop app:build"
+  },
+  "patchedDependencies": {
+    "three-stdlib@2.36.1": "patches/three-stdlib@2.36.1.patch"
   }
 }

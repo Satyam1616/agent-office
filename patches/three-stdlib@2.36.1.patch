@@ -1,0 +1,180 @@
+diff --git a/controls/OrbitControls.cjs b/controls/OrbitControls.cjs
+index aa73053..c4f5cad 100644
+--- a/controls/OrbitControls.cjs
++++ b/controls/OrbitControls.cjs
+@@ -302,20 +302,26 @@ class OrbitControls extends EventDispatcher.EventDispatcher {
+       scope.domElement.style.touchAction = "none";
+       scope.domElement.addEventListener("contextmenu", onContextMenu);
+       scope.domElement.addEventListener("pointerdown", onPointerDown);
+-      scope.domElement.addEventListener("pointercancel", onPointerUp);
+       scope.domElement.addEventListener("wheel", onMouseWheel);
+     };
+     this.dispose = () => {
+       var _a, _b, _c, _d, _e, _f;
+       if (scope.domElement) {
++        for (const pointer of pointers) {
++          if (scope.domElement.hasPointerCapture(pointer.pointerId))
++            scope.domElement.releasePointerCapture(pointer.pointerId);
++        }
+         scope.domElement.style.touchAction = "auto";
+       }
+       (_a = scope.domElement) == null ? void 0 : _a.removeEventListener("contextmenu", onContextMenu);
+       (_b = scope.domElement) == null ? void 0 : _b.removeEventListener("pointerdown", onPointerDown);
+-      (_c = scope.domElement) == null ? void 0 : _c.removeEventListener("pointercancel", onPointerUp);
++      (_c = scope.domElement) == null ? void 0 : _c.ownerDocument.removeEventListener("pointercancel", onPointerUp);
+       (_d = scope.domElement) == null ? void 0 : _d.removeEventListener("wheel", onMouseWheel);
+       (_e = scope.domElement) == null ? void 0 : _e.ownerDocument.removeEventListener("pointermove", onPointerMove);
+       (_f = scope.domElement) == null ? void 0 : _f.ownerDocument.removeEventListener("pointerup", onPointerUp);
++      pointers.length = 0;
++      for (const id in pointerPositions) delete pointerPositions[id];
++      state = STATE.NONE;
+       if (scope._domElementKeyEvents !== null) {
+         scope._domElementKeyEvents.removeEventListener("keydown", onKeyDown);
+       }
+@@ -615,11 +621,13 @@ class OrbitControls extends EventDispatcher.EventDispatcher {
+     }
+     function onPointerDown(event) {
+       var _a, _b;
+-      if (scope.enabled === false)
++      if (scope.enabled === false || pointers.some((pointer) => pointer.pointerId === event.pointerId))
+         return;
++      scope.domElement.setPointerCapture(event.pointerId);
+       if (pointers.length === 0) {
+         (_a = scope.domElement) == null ? void 0 : _a.ownerDocument.addEventListener("pointermove", onPointerMove);
+         (_b = scope.domElement) == null ? void 0 : _b.ownerDocument.addEventListener("pointerup", onPointerUp);
++        scope.domElement.ownerDocument.addEventListener("pointercancel", onPointerUp);
+       }
+       addPointer(event);
+       if (event.pointerType === "touch") {
+@@ -629,7 +637,7 @@ class OrbitControls extends EventDispatcher.EventDispatcher {
+       }
+     }
+     function onPointerMove(event) {
+-      if (scope.enabled === false)
++      if (scope.enabled === false || !pointers.some((pointer) => pointer.pointerId === event.pointerId))
+         return;
+       if (event.pointerType === "touch") {
+         onTouchMove(event);
+@@ -639,14 +647,20 @@ class OrbitControls extends EventDispatcher.EventDispatcher {
+     }
+     function onPointerUp(event) {
+       var _a, _b, _c;
++      if (!pointers.some((pointer) => pointer.pointerId === event.pointerId))
++        return;
+       removePointer(event);
++      if (scope.domElement.hasPointerCapture(event.pointerId))
++        scope.domElement.releasePointerCapture(event.pointerId);
+       if (pointers.length === 0) {
+-        (_a = scope.domElement) == null ? void 0 : _a.releasePointerCapture(event.pointerId);
+         (_b = scope.domElement) == null ? void 0 : _b.ownerDocument.removeEventListener("pointermove", onPointerMove);
+         (_c = scope.domElement) == null ? void 0 : _c.ownerDocument.removeEventListener("pointerup", onPointerUp);
++        scope.domElement.ownerDocument.removeEventListener("pointercancel", onPointerUp);
++        scope.dispatchEvent(endEvent);
++        state = STATE.NONE;
++      } else if (pointers[0].pointerType === "touch") {
++        onTouchStart(pointers[0]);
+       }
+-      scope.dispatchEvent(endEvent);
+-      state = STATE.NONE;
+     }
+     function onMouseDown(event) {
+       let mouseAction;
+@@ -833,6 +847,8 @@ class OrbitControls extends EventDispatcher.EventDispatcher {
+       }
+     }
+     function trackPointer(event) {
++      const index = pointers.findIndex((pointer) => pointer.pointerId === event.pointerId);
++      if (index !== -1) pointers[index] = event;
+       let position = pointerPositions[event.pointerId];
+       if (position === void 0) {
+         position = new THREE.Vector2();
+diff --git a/controls/OrbitControls.js b/controls/OrbitControls.js
+index 576ad6f..84769ed 100644
+--- a/controls/OrbitControls.js
++++ b/controls/OrbitControls.js
+@@ -300,20 +300,26 @@ class OrbitControls extends EventDispatcher {
+       scope.domElement.style.touchAction = "none";
+       scope.domElement.addEventListener("contextmenu", onContextMenu);
+       scope.domElement.addEventListener("pointerdown", onPointerDown);
+-      scope.domElement.addEventListener("pointercancel", onPointerUp);
+       scope.domElement.addEventListener("wheel", onMouseWheel);
+     };
+     this.dispose = () => {
+       var _a, _b, _c, _d, _e, _f;
+       if (scope.domElement) {
++        for (const pointer of pointers) {
++          if (scope.domElement.hasPointerCapture(pointer.pointerId))
++            scope.domElement.releasePointerCapture(pointer.pointerId);
++        }
+         scope.domElement.style.touchAction = "auto";
+       }
+       (_a = scope.domElement) == null ? void 0 : _a.removeEventListener("contextmenu", onContextMenu);
+       (_b = scope.domElement) == null ? void 0 : _b.removeEventListener("pointerdown", onPointerDown);
+-      (_c = scope.domElement) == null ? void 0 : _c.removeEventListener("pointercancel", onPointerUp);
++      (_c = scope.domElement) == null ? void 0 : _c.ownerDocument.removeEventListener("pointercancel", onPointerUp);
+       (_d = scope.domElement) == null ? void 0 : _d.removeEventListener("wheel", onMouseWheel);
+       (_e = scope.domElement) == null ? void 0 : _e.ownerDocument.removeEventListener("pointermove", onPointerMove);
+       (_f = scope.domElement) == null ? void 0 : _f.ownerDocument.removeEventListener("pointerup", onPointerUp);
++      pointers.length = 0;
++      for (const id in pointerPositions) delete pointerPositions[id];
++      state = STATE.NONE;
+       if (scope._domElementKeyEvents !== null) {
+         scope._domElementKeyEvents.removeEventListener("keydown", onKeyDown);
+       }
+@@ -613,11 +619,13 @@ class OrbitControls extends EventDispatcher {
+     }
+     function onPointerDown(event) {
+       var _a, _b;
+-      if (scope.enabled === false)
++      if (scope.enabled === false || pointers.some((pointer) => pointer.pointerId === event.pointerId))
+         return;
++      scope.domElement.setPointerCapture(event.pointerId);
+       if (pointers.length === 0) {
+         (_a = scope.domElement) == null ? void 0 : _a.ownerDocument.addEventListener("pointermove", onPointerMove);
+         (_b = scope.domElement) == null ? void 0 : _b.ownerDocument.addEventListener("pointerup", onPointerUp);
++        scope.domElement.ownerDocument.addEventListener("pointercancel", onPointerUp);
+       }
+       addPointer(event);
+       if (event.pointerType === "touch") {
+@@ -627,7 +635,7 @@ class OrbitControls extends EventDispatcher {
+       }
+     }
+     function onPointerMove(event) {
+-      if (scope.enabled === false)
++      if (scope.enabled === false || !pointers.some((pointer) => pointer.pointerId === event.pointerId))
+         return;
+       if (event.pointerType === "touch") {
+         onTouchMove(event);
+@@ -637,14 +645,20 @@ class OrbitControls extends EventDispatcher {
+     }
+     function onPointerUp(event) {
+       var _a, _b, _c;
++      if (!pointers.some((pointer) => pointer.pointerId === event.pointerId))
++        return;
+       removePointer(event);
++      if (scope.domElement.hasPointerCapture(event.pointerId))
++        scope.domElement.releasePointerCapture(event.pointerId);
+       if (pointers.length === 0) {
+-        (_a = scope.domElement) == null ? void 0 : _a.releasePointerCapture(event.pointerId);
+         (_b = scope.domElement) == null ? void 0 : _b.ownerDocument.removeEventListener("pointermove", onPointerMove);
+         (_c = scope.domElement) == null ? void 0 : _c.ownerDocument.removeEventListener("pointerup", onPointerUp);
++        scope.domElement.ownerDocument.removeEventListener("pointercancel", onPointerUp);
++        scope.dispatchEvent(endEvent);
++        state = STATE.NONE;
++      } else if (pointers[0].pointerType === "touch") {
++        onTouchStart(pointers[0]);
+       }
+-      scope.dispatchEvent(endEvent);
+-      state = STATE.NONE;
+     }
+     function onMouseDown(event) {
+       let mouseAction;
+@@ -831,6 +845,8 @@ class OrbitControls extends EventDispatcher {
+       }
+     }
+     function trackPointer(event) {
++      const index = pointers.findIndex((pointer) => pointer.pointerId === event.pointerId);
++      if (index !== -1) pointers[index] = event;
+       let position = pointerPositions[event.pointerId];
+       if (position === void 0) {
+         position = new Vector2();

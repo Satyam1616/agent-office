@@ -86,6 +86,8 @@ bun run dev:demo   # fake data for every agent, handy for looking around
 ```
 
 Add `?zoom=40` to the URL to set the initial zoom. Click a character to see its session details.
+On touchscreens, drag with one finger to pan; use two fingers to pinch-zoom or drag to rotate.
+With a mouse, left-drag rotates, right-drag pans, and the wheel zooms.
 
 The collector checks each request's `Host` and browser `Origin` against local, Tailscale, and
 configured hostnames, including the port. The Vite origin on `localhost:5173` is allowed only by

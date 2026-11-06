@@ -2,6 +2,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, OrthographicCamera } from "@react-three/drei";
 import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import { useEffect } from "react";
+import { TOUCH } from "three";
 import { Office } from "./scene/Office";
 import { QUALITY, useSettings } from "./settings";
 import { Hud } from "./ui/Hud";
@@ -58,6 +59,7 @@ export function App() {
       {/* Remount on preset change: shadow maps and antialiasing are fixed at creation. */}
       <Canvas
         key={quality}
+        className="touch-none"
         shadows={q.shadows > 0}
         dpr={q.dpr}
         gl={{ antialias: quality !== "saver", powerPreference: quality === "saver" ? "low-power" : "high-performance" }}
@@ -74,6 +76,7 @@ export function App() {
           maxZoom={80}
           maxPolarAngle={1.25}
           screenSpacePanning={false}
+          touches={{ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE }}
           onChange={(e) => e && markFar((e.target as unknown as { object: { zoom: number } }).object.zoom)}
         />
         <hemisphereLight args={["#cfe3ff", "#20242c", 0.9]} />

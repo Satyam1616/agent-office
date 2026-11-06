@@ -55,7 +55,7 @@ export function Bay({ agent, sessions, room }: { agent: AgentKind; sessions: Ses
           <boxGeometry args={[ROOM_W, 0.04, 0.1]} />
           <meshStandardMaterial color={color} emissive={color} emissiveIntensity={lit ? 2.2 : 0.2} toneMapped={false} />
         </mesh>
-        <Html position={[-ROOM_W / 2 + 0.4, 3.9, -D / 2 + 0.3]} zIndexRange={[10, 0]}>
+        <Html position={[-ROOM_W / 2 + 0.4, 3.9, -D / 2 + 0.3]} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
           <RoomSign color={color}>
             <Dot color={color} glow={lit} />
             <b>{label}</b>
