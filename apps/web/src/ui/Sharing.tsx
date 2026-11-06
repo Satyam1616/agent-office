@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { renderSVG } from "uqr";
 import type { DeviceState, DeviceStatus } from "../../../collector/src/peers";
 import type { RemoteStatus } from "../../../collector/src/remote";
+import { useIsPhone } from "../useIsPhone";
 import { Dot, muted } from "./labels";
 
 type Sharing = RemoteStatus & { devices: DeviceStatus[]; problem?: string };
@@ -32,6 +33,7 @@ const order = (s: DeviceState) => ["connected", "connecting", "no-office", "offl
  * the collector; remote viewers get a 404 and see nothing.
  */
 export function SharingSettings() {
+  const phone = useIsPhone();
   const [st, setSt] = useState<Sharing | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -68,7 +70,7 @@ export function SharingSettings() {
           onChange={(_, d) => void update({ enabled: d.checked })}
         />
         {(st.problem || !st.tailscale) && (
-          <MessageBar intent="warning">
+          <MessageBar intent="warning" layout={phone ? "multiline" : "auto"}>
             <MessageBarBody>
               {st.problem ?? "No Tailscale address on this computer"}. Install Tailscale here and sign in to the same
               account as your other devices.
@@ -76,7 +78,7 @@ export function SharingSettings() {
           </MessageBar>
         )}
         {st.error && (
-          <MessageBar intent="error">
+          <MessageBar intent="error" layout={phone ? "multiline" : "auto"}>
             <MessageBarBody>{st.error}</MessageBarBody>
           </MessageBar>
         )}
@@ -102,7 +104,7 @@ export function SharingSettings() {
 
       {st.enabled && url && (
         <Field label="Phone" hint="Scan with the Agent Office app, or your phone's camera to open it in the browser.">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-start gap-3 md:flex-row md:items-center">
             {/* uqr output is a self-contained SVG built from our own URL. */}
             <div
               className="shrink-0 rounded-md bg-white [&_svg]:block [&_svg]:size-[150px]"
