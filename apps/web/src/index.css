@@ -62,3 +62,123 @@
     padding: 1rem;
   }
 }
+
+.fui-Button.timeline-range {
+  min-width: 0;
+  padding-inline: 0.375rem;
+}
+
+/* CSS pixels approximate Android dp at the default page scale. Enlarge the actual
+   input/label/button boxes, retaining the normal-size icons and indicators. */
+@media (pointer: coarse) {
+  .fui-FluentProvider .fui-Button,
+  .fui-FluentProvider .fui-ToggleButton,
+  .fui-FluentProvider .fui-MenuItemRadio {
+    min-width: 48px;
+    min-height: 48px;
+    flex-shrink: 0;
+  }
+
+  .fui-FluentProvider .fui-Radio,
+  .fui-FluentProvider .fui-Switch {
+    min-height: 48px;
+    align-items: center;
+  }
+
+  .fui-FluentProvider .fui-Radio__input {
+    width: 48px;
+  }
+
+  .fui-FluentProvider .fui-Radio__indicator {
+    margin-inline: 16px;
+  }
+
+  .fui-FluentProvider .fui-Radio__label,
+  .fui-FluentProvider .fui-Switch__label {
+    box-sizing: border-box;
+    min-height: 48px;
+    margin-block: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .fui-FluentProvider .fui-Select,
+  .fui-FluentProvider .fui-Select__select,
+  .fui-FluentProvider .fui-Slider,
+  .fui-FluentProvider .fui-Slider__input {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .hud-feed .hud-feed-item {
+    min-height: 48px;
+  }
+}
+
+/* Width controls compact layout. Pointer type only controls target density above. */
+@media (max-width: 767px) {
+  /* Five touch targets fit even at 320px; the status keeps its own row. */
+  .hud .hud-header {
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+  }
+
+  .hud-header h1,
+  .hud-header .hud-theme-label {
+    display: none;
+  }
+
+  .hud-header .fui-Badge {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .hud-header .fui-Button,
+  .hud-header .fui-ToggleButton {
+    padding-inline: 0;
+  }
+}
+
+/* Resized controls and wrapped replay bars must leave room for panels. */
+@media (max-width: 767px), (pointer: coarse) {
+  /* Anchor bars to the visible viewport even if scene labels extend the page. */
+  .hud .hud-timeline {
+    top: calc(100dvh - 0.75rem - var(--hud-timeline-height));
+    bottom: auto;
+  }
+
+  .hud .hud-agents,
+  .hud .hud-feed {
+    top: calc(1.5rem + var(--hud-header-height));
+    bottom: auto;
+    max-height: max(48px, calc(100dvh - 3rem - var(--hud-header-height) - var(--hud-timeline-height)));
+    overflow-y: auto;
+  }
+
+  .hud .hud-feed {
+    height: max(48px, calc(100dvh - 3rem - var(--hud-header-height) - var(--hud-timeline-height)));
+  }
+
+  .hud .hud-selected {
+    top: calc(100dvh - 1.5rem - var(--hud-timeline-height));
+    bottom: auto;
+    max-height: min(50dvh, max(48px, calc(100dvh - 3rem - var(--hud-header-height) - var(--hud-timeline-height))));
+    translate: 0 -100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .hud .hud-timeline,
+  .hud .hud-feed,
+  .hud .hud-selected {
+    left: 0.75rem;
+    right: auto;
+    width: calc(100vw - 1.5rem);
+  }
+
+  .hud .hud-timeline {
+    max-width: none;
+    translate: none;
+  }
+}

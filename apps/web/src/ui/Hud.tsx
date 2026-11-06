@@ -29,13 +29,13 @@ import {
   Wrench20Regular,
   type FluentIcon,
 } from "@fluentui/react-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ACTIVITY_META, AGENT_META, AGENTS, clipText, type SessionState } from "../agents";
 import { ROLE_META, ROLES, roleFor, type Theme } from "../roles";
 import { useSettings } from "../settings";
 import { sound } from "../sound";
 import { useClock, useMultiMachine, useOffice } from "../store";
-import { useIsPhone } from "../useIsPhone";
+import { useIsNarrow } from "../useIsNarrow";
 import { ACTIVITY_ICON, AgvIcon, Ico, RoleLabel, SubagentIcon } from "./icons";
 import { Dot, fail, MachineName, mono, muted, panel } from "./labels";
 import { SettingsDialog } from "./Settings";
@@ -67,19 +67,35 @@ const THEME_OPTIONS: { value: Theme; label: string; icon: FluentIcon }[] = [
 ];
 
 export function Hud() {
+  const hud = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = hud.current!;
+    const header = root.querySelector<HTMLElement>(".hud-header")!;
+    const timeline = root.querySelector<HTMLElement>(".hud-timeline")!;
+    // Larger targets can wrap the timeline. Keep sheets between the two bars as they resize.
+    const measure = () => {
+      root.style.setProperty("--hud-header-height", `${header.offsetHeight}px`);
+      root.style.setProperty("--hud-timeline-height", `${timeline.offsetHeight}px`);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    observer.observe(timeline);
+    measure();
+    return () => observer.disconnect();
+  }, []);
   const { connected, sessions, feed, stats, selected, select, theme, setTheme } = useOffice();
   const factory = theme === "factory";
   const now = useClock(useNow());
   const [soundOn, setSoundOn] = useState(sound.enabled);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // Wide screens show/hide each side panel (remembered); phones open one at a time.
-  const phone = useIsPhone();
+  // Wide screens show/hide each side panel (remembered); narrow screens open one at a time.
+  const narrow = useIsNarrow();
   const panels = useSettings((s) => s.panels);
   const updateSettings = useSettings((s) => s.update);
   const [sheet, setSheet] = useState<Panel | null>(null);
-  const isOpen = (p: Panel) => (phone ? sheet === p : panels[p]);
+  const isOpen = (p: Panel) => (narrow ? sheet === p : panels[p]);
   const toggle = (p: Panel) =>
-    phone ? setSheet((cur) => (cur === p ? null : p)) : updateSettings({ panels: { ...panels, [p]: !panels[p] } });
+    narrow ? setSheet((cur) => (cur === p ? null : p)) : updateSettings({ panels: { ...panels, [p]: !panels[p] } });
   useEffect(() => sound.onChange(() => setSoundOn(sound.enabled)), []);
   const multi = useMultiMachine();
   const list = Object.values(sessions);
@@ -89,8 +105,8 @@ export function Hud() {
   return (
     // Above drei <Html> labels, which use z-index up to 20.
     // Allow panels to scroll vertically without handing pinch/double-tap zoom to the page.
-    <div className="pointer-events-none touch-pan-y fixed inset-0 z-[100]">
-      <header className={`${panel} top-3 left-3 flex items-center gap-2`}>
+    <div ref={hud} className="hud pointer-events-none touch-pan-y fixed inset-0 z-[100]">
+      <header className={`hud-header ${panel} top-3 left-3 flex items-center gap-2`}>
         <h1 className="m-0 mr-1 text-[15px] font-semibold max-sm:hidden">Agent Office</h1>
         <Badge appearance="tint" color={connected ? "success" : "danger"} size="small">
           {connected ? "live" : "reconnecting…"}
@@ -100,8 +116,8 @@ export function Hud() {
           onCheckedValueChange={(_, d) => setTheme(d.checkedItems[0] as Theme)}
         >
           <MenuTrigger disableButtonEnhancement>
-            <Button size="small" icon={<current.icon />} className="max-sm:!min-w-0">
-              <span className="max-sm:hidden">{current.label}</span>
+            <Button size="small" icon={<current.icon />} aria-label="Theme">
+              <span className="hud-theme-label max-sm:hidden">{current.label}</span>
             </Button>
           </MenuTrigger>
           <MenuPopover>
@@ -147,7 +163,7 @@ export function Hud() {
       </header>
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
-      <aside className={`${panel} top-[60px] left-3 ${isOpen("agents") ? "grid" : "hidden"} w-[240px] gap-1.5`}>
+      <aside className={`hud-agents ${panel} top-[60px] left-3 ${isOpen("agents") ? "grid" : "hidden"} w-[240px] gap-1.5`}>
         {AGENTS.map((a) => {
           const mine = list.filter((s) => s.agent === a);
           const working = mine.filter((s) => s.status !== "idle").length;
@@ -178,7 +194,7 @@ export function Hud() {
       </aside>
 
       <aside
-        className={`${panel} ${isOpen("feed") ? "flex" : "hidden"} top-[60px] right-3 bottom-[76px] left-3 flex-col gap-2 md:top-3 md:bottom-auto md:left-auto md:max-h-[min(60vh,560px)] md:w-[340px]`}
+        className={`hud-feed ${panel} ${isOpen("feed") ? "flex" : "hidden"} top-[60px] right-3 bottom-[76px] left-3 flex-col gap-2 md:top-3 md:bottom-auto md:left-auto md:max-h-[min(60vh,560px)] md:w-[340px]`}
       >
         <h2 className={heading}>Live feed</h2>
         <ul className="m-0 grid min-h-0 list-none auto-rows-max content-start gap-1 overflow-y-auto p-0">
@@ -189,7 +205,7 @@ export function Hud() {
                 select(f.key);
                 setSheet(null);
               }}
-              className="grid cursor-pointer grid-cols-[10px_28px_auto_1fr] items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-md px-1 py-[3px] hover:bg-white/5"
+              className="hud-feed-item grid cursor-pointer grid-cols-[10px_28px_auto_1fr] items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-md px-1 py-[3px] hover:bg-white/5"
             >
               <Dot color={AGENT_META[f.agent].color} />
               <span className={muted}>{timeAgo(f.ts, now)}</span>
@@ -231,7 +247,7 @@ export function Hud() {
 
       {sel && (
         <section
-          className={`${panel} right-3 bottom-[76px] left-3 max-h-[50vh] overflow-y-auto border-l-4 md:right-auto md:bottom-3 md:w-[380px]`}
+          className={`hud-selected ${panel} right-3 bottom-[76px] left-3 max-h-[50vh] overflow-y-auto border-l-4 md:right-auto md:bottom-3 md:w-[380px]`}
           style={{ borderLeftColor: AGENT_META[sel.agent].color }}
         >
           <div className="flex items-start justify-between gap-2">

@@ -37,7 +37,7 @@ export function Timeline() {
 
   return (
     <div
-      className={`${panel} right-3 bottom-3 left-3 flex flex-wrap items-center justify-center gap-2 md:right-auto md:left-1/2 md:max-w-[600px] md:-translate-x-1/2`}
+      className={`hud-timeline ${panel} right-3 bottom-3 left-3 flex flex-wrap items-center justify-center gap-2 md:right-auto md:left-1/2 md:max-w-[600px] md:-translate-x-1/2`}
     >
       <div className="flex gap-1">
         <Button
@@ -96,7 +96,7 @@ export function Timeline() {
           </Select>
           <div className="flex gap-0.5">
             {RANGES.map(([label, span]) => (
-              <Button key={label} size="small" appearance="subtle" className="!min-w-0 !px-1.5" onClick={() => loadRange(span)}>
+              <Button key={label} size="small" appearance="subtle" className="timeline-range" onClick={() => loadRange(span)}>
                 {label}
               </Button>
             ))}

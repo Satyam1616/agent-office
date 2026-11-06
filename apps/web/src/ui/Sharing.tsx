@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { renderSVG } from "uqr";
 import type { DeviceState, DeviceStatus } from "../../../collector/src/peers";
 import type { RemoteStatus } from "../../../collector/src/remote";
-import { useIsPhone } from "../useIsPhone";
+import { useIsNarrow } from "../useIsNarrow";
 import { Dot, muted } from "./labels";
 
 type Sharing = RemoteStatus & { devices: DeviceStatus[]; problem?: string };
@@ -33,7 +33,7 @@ const order = (s: DeviceState) => ["connected", "connecting", "no-office", "offl
  * the collector; remote viewers get a 404 and see nothing.
  */
 export function SharingSettings() {
-  const phone = useIsPhone();
+  const narrow = useIsNarrow();
   const [st, setSt] = useState<Sharing | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -70,7 +70,7 @@ export function SharingSettings() {
           onChange={(_, d) => void update({ enabled: d.checked })}
         />
         {(st.problem || !st.tailscale) && (
-          <MessageBar intent="warning" layout={phone ? "multiline" : "auto"}>
+          <MessageBar intent="warning" layout={narrow ? "multiline" : "auto"}>
             <MessageBarBody>
               {st.problem ?? "No Tailscale address on this computer"}. Install Tailscale here and sign in to the same
               account as your other devices.
@@ -78,7 +78,7 @@ export function SharingSettings() {
           </MessageBar>
         )}
         {st.error && (
-          <MessageBar intent="error" layout={phone ? "multiline" : "auto"}>
+          <MessageBar intent="error" layout={narrow ? "multiline" : "auto"}>
             <MessageBarBody>{st.error}</MessageBarBody>
           </MessageBar>
         )}
