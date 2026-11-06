@@ -133,6 +133,11 @@ Linux. Install, open, done: no Bun required.
   close-to-tray and start at sign-in. Launching it a second time just brings the window back.
 - History is stored in the app's data folder (`%APPDATA%\dev.bimaadam.agentoffice` /
   `~/.local/share/dev.bimaadam.agentoffice`).
+- **Updates install themselves.** Settings checks for a new version and can download and
+  install it, then restart. This covers the Windows `.exe`/`.msi` and the Linux `.AppImage`.
+  `.deb`, `.rpm` and the AUR package update through apt, dnf and pacman instead, as they
+  should, and the Android viewer through however you installed its APK. Every update is
+  signature-checked against a key baked into the app; an unsigned or tampered one is refused.
 
 **Arch / EndeavourOS / Manjaro:** use the PKGBUILD in `packaging/aur/` (installs the `.deb`
 with Arch's own WebKitGTK and GStreamer, so sound works and it shows up in the app menu):

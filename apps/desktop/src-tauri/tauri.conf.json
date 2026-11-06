@@ -8,12 +8,19 @@
     "beforeDevCommand": "bun scripts/build-collector.ts",
     "beforeBuildCommand": "bun run prepare-app"
   },
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://github.com/ignitrondev/agent-office/releases/latest/download/latest.json"],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFCNkY2MDI4RkYyQjA4NjcKUldSbkNDdi9LR0J2cXphaVJFcERqQlBRaGpsWDF5dUJkS2lURjdxR3BzWHc1YU9jRnBYMUxjZ0oK"
+    }
+  },
   "app": {
     "windows": [],
     "security": { "csp": null }
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": ["deb", "rpm", "appimage", "nsis", "msi"],
     "category": "DeveloperTool",
     "linux": { "appimage": { "bundleMediaFramework": true } },
