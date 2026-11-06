@@ -53,8 +53,43 @@ const hideOverlay = () => {
   show(overlay, false);
 };
 
-$("scan-cancel").addEventListener("click", () => void cancel().catch(() => {}));
+/** True while the camera UI is up. Guards every teardown path against running twice. */
+let scanning = false;
+/** Bumped on every teardown, so a scan that resolves afterwards is ignored. */
+let scanSeq = 0;
+
+/**
+ * Takes the scanner down without waiting for `scan()`.
+ *
+ * `scan()` does not reliably settle: cancelling from the button, or dismissing the camera with
+ * the Android back gesture, can leave the promise pending for good. Teardown that waited for it
+ * left the page transparent with the form hidden, which is a dead end. So the UI is restored
+ * here and now, and whatever `scan()` eventually does is checked against `scanSeq` and dropped.
+ */
+function endScan(stopCamera: boolean) {
+  if (!scanning) return;
+  scanning = false;
+  scanSeq++;
+  showScanner(false);
+  // Drop the entry pushed for the back gesture, or the next back press would do nothing
+  // visible. When this runs *from* popstate the entry is already gone, so the check is false.
+  if (history.state?.scanning) history.back();
+  if (stopCamera) void cancel().catch(() => {});
+}
+
+$("scan-cancel").addEventListener("click", () => endScan(true));
 $("connect-back").addEventListener("click", hideOverlay);
+
+// Best effort for the Android back gesture, which closes the camera without telling the page.
+window.addEventListener("popstate", () => endScan(true));
+
+/**
+ * Last resort: if the camera is gone but the overlay is somehow still up, tapping the dark area
+ * gets out. Without it a missed teardown traps the user on a screen with no controls.
+ */
+scanUi.addEventListener("click", (e) => {
+  if (e.target === scanUi) endScan(true);
+});
 
 /** The QR code / link from Settings: http://<tailscale-ip>:<port>/?token=<token>. */
 function parseHub(text: string): URL | null {
@@ -107,13 +142,24 @@ async function scanCode() {
   }
   // `windowed: true` keeps the webview on top of the camera preview, which is the only way
   // to draw a frame over it; the default hands the whole screen to the camera.
-  let content: string;
+  scanning = true;
+  const seq = scanSeq;
   showScanner(true);
+  // An entry of our own, so the back gesture pops it and reaches the popstate handler above.
+  history.pushState({ scanning: true }, "");
+
+  let content: string;
   try {
     content = (await scan({ windowed: true, formats: [Format.QRCode] })).content;
-  } finally {
-    showScanner(false);
+  } catch (err) {
+    endScan(false);
+    if (/cancel/i.test(String(err))) return;
+    throw err;
   }
+  // Torn down while the camera was still running: the user asked to stop, so honour that.
+  if (seq !== scanSeq) return;
+  endScan(false);
+
   const hub = parseHub(content);
   if (!hub) {
     say("That QR code isn't an Agent Office link.", "error");
