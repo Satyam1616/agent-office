@@ -98,7 +98,8 @@ export function Hud() {
 
   return (
     // Above drei <Html> labels, which use z-index up to 20.
-    <div className="pointer-events-none fixed inset-0 z-[100]">
+    // Allow panels to scroll vertically without handing pinch/double-tap zoom to the page.
+    <div className="pointer-events-none touch-pan-y fixed inset-0 z-[100]">
       <header className={`${panel} top-3 left-3 flex items-center gap-2`}>
         <h1 className="m-0 mr-1 text-[15px] font-semibold max-sm:hidden">Agent Office</h1>
         <Badge appearance="tint" color={connected ? "success" : "danger"} size="small">

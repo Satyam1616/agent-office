@@ -9,4 +9,6 @@
    keep them see-through so the scene stays visible behind dialogs. */
 .fui-FluentProvider[data-portal-node] {
   background: transparent;
+  /* Menus and dialogs live outside the HUD: keep vertical scrolling, but not page zoom. */
+  touch-action: pan-y;
 }
