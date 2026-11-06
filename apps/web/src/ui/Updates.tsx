@@ -2,7 +2,8 @@ import { Button, Field, Spinner } from "@fluentui/react-components";
 import { ArrowDownload20Regular, ArrowClockwise20Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { isDesktop } from "../desktop";
-import { checkForUpdate, installUpdate, restartApp } from "../update";
+import { appVersion, checkForUpdate, installUpdate, restartApp } from "../update";
+import { muted } from "./labels";
 
 type State =
   | { phase: "idle" }
@@ -22,6 +23,8 @@ const mb = (n: number) => `${(n / 1048576).toFixed(1)} MB`;
  */
 export function UpdateSettings({ open }: { open: boolean }) {
   const [state, setState] = useState<State>({ phase: "idle" });
+  const [version, setVersion] = useState<string | null>(null);
+  useEffect(() => void appVersion().then(setVersion), []);
 
   const check = async (manual: boolean) => {
     setState({ phase: "checking" });
@@ -53,39 +56,37 @@ export function UpdateSettings({ open }: { open: boolean }) {
 
   return (
     <Field label="Updates" hint={hint(state)}>
-      {state.phase === "checking" && <Spinner size="tiny" label="Checking…" labelPosition="after" />}
+      <div className="flex flex-col items-start gap-2">
+        {version && <div className={muted}>Version {version}</div>}
 
-      {(state.phase === "idle" || state.phase === "none" || state.phase === "error") && (
-        <div>
+        {state.phase === "checking" && <Spinner size="tiny" label="Checking…" labelPosition="after" />}
+
+        {(state.phase === "idle" || state.phase === "none" || state.phase === "error") && (
           <Button icon={<ArrowClockwise20Regular />} onClick={() => void check(true)}>
             Check for updates
           </Button>
-        </div>
-      )}
+        )}
 
-      {state.phase === "found" && (
-        <div>
+        {state.phase === "found" && (
           <Button appearance="primary" icon={<ArrowDownload20Regular />} onClick={() => void install(state.version)}>
             Install {state.version}
           </Button>
-        </div>
-      )}
+        )}
 
-      {state.phase === "downloading" && (
-        <Spinner
-          size="tiny"
-          labelPosition="after"
-          label={state.total ? `Downloading ${mb(state.received)} of ${mb(state.total)}…` : "Downloading…"}
-        />
-      )}
+        {state.phase === "downloading" && (
+          <Spinner
+            size="tiny"
+            labelPosition="after"
+            label={state.total ? `Downloading ${mb(state.received)} of ${mb(state.total)}…` : "Downloading…"}
+          />
+        )}
 
-      {state.phase === "ready" && (
-        <div>
+        {state.phase === "ready" && (
           <Button appearance="primary" onClick={() => void restartApp()}>
             Restart to finish
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </Field>
   );
 }
