@@ -153,6 +153,68 @@ describe("collector live HTTP and WebSocket security", () => {
     }
   });
 
+  it("serves the sharing panel to a same-origin GET while POST still needs an Origin", async () => {
+    // The desktop app: loopback, no token, no ALLOWED_HOSTS. Browsers omit Origin on a
+    // same-origin GET, and demanding one made SharingSettings render nothing at all.
+    const localPort = reservePort();
+    const dir = mkdtempSync(join(tmpdir(), "agent-office-remote-"));
+    const local = Bun.spawn(["bun", "run", "apps/collector/src/index.ts"], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        HOST: "127.0.0.1",
+        PORT: String(localPort),
+        TOKEN: "",
+        ALLOWED_HOSTS: "",
+        DB_PATH: join(dir, "collector.db"),
+        NODE_ENV: "production",
+      },
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    try {
+      await waitUntilReady(localPort, "");
+      const endpoint = `http://127.0.0.1:${localPort}/api/remote`;
+      const host = `127.0.0.1:${localPort}`;
+      const origin = `http://${host}`;
+
+      const read = await fetch(endpoint, { headers: { host } });
+      expect(read.status).toBe(200);
+      expect(read.headers.has("access-control-allow-origin")).toBe(false);
+
+      const readWithOrigin = await fetch(endpoint, { headers: { host, origin } });
+      expect(readWithOrigin.status).toBe(200);
+
+      // A present but foreign Origin is still refused, on reads too.
+      const readCrossSite = await fetch(endpoint, { headers: { host, origin: "http://evil.example" } });
+      expect(readCrossSite.status).toBe(403);
+
+      // Writes keep the full CSRF check: browsers always send Origin on POST.
+      const writeNoOrigin = await fetch(endpoint, {
+        method: "POST",
+        headers: { host, "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      expect(writeNoOrigin.status).toBe(403);
+
+      const writeCrossSite = await fetch(endpoint, {
+        method: "POST",
+        headers: { host, origin: "http://evil.example", "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      expect(writeCrossSite.status).toBe(403);
+
+      const writeSameOrigin = await fetch(endpoint, {
+        method: "POST",
+        headers: { host, origin, "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      expect(writeSameOrigin.status).toBe(200);
+    } finally {
+      await stopCollector(local, dir);
+    }
+  }, 20_000);
+
   it("does not grant loopback trust when proxy headers are present", async () => {
     const portWithoutToken = reservePort();
     const dir = mkdtempSync(join(tmpdir(), "agent-office-forwarded-"));
