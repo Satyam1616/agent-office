@@ -3,3 +3,16 @@
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
+/*
+ * The barcode scanner draws the camera behind the webview, so everything the page paints has
+ * to get out of the way for it to be visible. Only the overlay stays.
+ */
+.scanning,
+.scanning body {
+  background: transparent !important;
+}
+
+.scanning main {
+  display: none;
+}

@@ -52,6 +52,40 @@
         <button id="forget" class="shrink-0 text-[#ff8a8a]">Forget</button>
       </div>
     </main>
+
+    <!--
+      Full screen, over everything. While scanning, the page background is made transparent so
+      the camera preview behind the webview shows through the cut-out square. Then the same
+      overlay turns into the connection progress, so the phone is never left on a bare camera
+      or a blank screen wondering whether anything happened.
+    -->
+    <div id="overlay" class="fixed inset-0 z-50 hidden">
+      <div id="scan-ui" class="absolute inset-0 flex flex-col items-center justify-center gap-10">
+        <div class="relative size-64 rounded-2xl shadow-[0_0_0_9999px_rgba(14,17,23,0.78)]">
+          <span class="absolute -left-1 -top-1 size-9 rounded-tl-2xl border-l-4 border-t-4 border-[#39ff88]"></span>
+          <span class="absolute -right-1 -top-1 size-9 rounded-tr-2xl border-r-4 border-t-4 border-[#39ff88]"></span>
+          <span class="absolute -bottom-1 -left-1 size-9 rounded-bl-2xl border-b-4 border-l-4 border-[#39ff88]"></span>
+          <span class="absolute -bottom-1 -right-1 size-9 rounded-br-2xl border-b-4 border-r-4 border-[#39ff88]"></span>
+        </div>
+        <p class="m-0 max-w-xs px-6 text-center text-[#e6e9ef] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+          Point at the QR code on your computer, in Agent Office → Settings.
+        </p>
+        <button id="scan-cancel" class="rounded-lg border border-[#2a2f3a] bg-[#1b1f27]/90 px-5 py-2.5 font-semibold text-[#e6e9ef]">
+          Cancel
+        </button>
+      </div>
+
+      <div id="connect-ui" class="absolute inset-0 hidden flex-col items-center justify-center gap-4 bg-[#0e1117] p-6">
+        <div id="connect-spinner" class="size-10 animate-spin rounded-full border-4 border-[#2a2f3a] border-t-[#2f81f7]"></div>
+        <div id="connect-tick" class="hidden text-4xl text-[#39ff88]">&#10003;</div>
+        <p id="connect-msg" class="m-0 text-center text-base text-[#e6e9ef]" role="status"></p>
+        <p id="connect-host" class="m-0 font-mono text-xs text-[#8b93a3]"></p>
+        <button id="connect-back" class="mt-2 hidden rounded-lg border border-[#2a2f3a] bg-[#1b1f27] px-5 py-2.5 font-semibold text-[#e6e9ef]">
+          Back
+        </button>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

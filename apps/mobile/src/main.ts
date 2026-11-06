@@ -1,4 +1,4 @@
-import { checkPermissions, Format, requestPermissions, scan } from "@tauri-apps/plugin-barcode-scanner";
+import { cancel, checkPermissions, Format, requestPermissions, scan } from "@tauri-apps/plugin-barcode-scanner";
 
 // Connect screen: find the hub (a computer running Agent Office with phone access on),
 // then hand the whole webview over to it. The office UI itself comes from the hub.
@@ -17,6 +17,44 @@ function say(text: string, kind: "info" | "error" = "info") {
 }
 
 const busy = (on: boolean) => buttons.forEach((b) => (b.disabled = on));
+
+const overlay = $<HTMLDivElement>("overlay");
+const scanUi = $<HTMLDivElement>("scan-ui");
+const connectUi = $<HTMLDivElement>("connect-ui");
+
+const show = (el: HTMLElement, on: boolean, display = "flex") => (el.style.display = on ? display : "none");
+
+/** Camera mode: hide the page so the preview behind the webview is visible. */
+function showScanner(on: boolean) {
+  document.documentElement.classList.toggle("scanning", on);
+  show(overlay, on, "block");
+  show(scanUi, on);
+  show(connectUi, false);
+}
+
+/**
+ * Connection progress, over an opaque background. Without this the phone sits on a blank
+ * screen between a successful scan and the office finishing its first paint.
+ */
+function showConnecting(message: string, host: string, state: "working" | "done" | "failed") {
+  document.documentElement.classList.remove("scanning");
+  show(overlay, true, "block");
+  show(scanUi, false);
+  show(connectUi, true);
+  show($("connect-spinner"), state === "working", "block");
+  show($("connect-tick"), state === "done", "block");
+  show($("connect-back"), state === "failed", "block");
+  $("connect-msg").textContent = message;
+  $("connect-host").textContent = host;
+}
+
+const hideOverlay = () => {
+  document.documentElement.classList.remove("scanning");
+  show(overlay, false);
+};
+
+$("scan-cancel").addEventListener("click", () => void cancel().catch(() => {}));
+$("connect-back").addEventListener("click", hideOverlay);
 
 /** The QR code / link from Settings: http://<tailscale-ip>:<port>/?token=<token>. */
 function parseHub(text: string): URL | null {
@@ -45,13 +83,19 @@ async function reachable(hub: URL) {
 async function connect(hub: URL) {
   busy(true);
   say(`Connecting to ${hub.host}…`);
+  showConnecting("Connecting…", hub.host, "working");
   if (!(await reachable(hub))) {
-    say(`Can't reach ${hub.host}. Is Tailscale on (on both devices) and the computer awake?`, "error");
+    const problem = `Can't reach ${hub.host}. Is Tailscale on (on both devices) and the computer awake?`;
+    say(problem, "error");
+    showConnecting(problem, hub.host, "failed");
     busy(false);
     return;
   }
   localStorage.setItem(HUB_KEY, hub.href);
-  location.replace(hub.href);
+  // Hold the confirmation on screen for a beat: the office takes a moment to paint, and
+  // replacing the page instantly reads as nothing having happened.
+  showConnecting("Connected — opening the office…", hub.host, "done");
+  setTimeout(() => location.replace(hub.href), 700);
 }
 
 async function scanCode() {
@@ -61,8 +105,16 @@ async function scanCode() {
     say("Camera permission is needed to scan. You can paste the link instead.", "error");
     return;
   }
-  const result = await scan({ windowed: false, formats: [Format.QRCode] });
-  const hub = parseHub(result.content);
+  // `windowed: true` keeps the webview on top of the camera preview, which is the only way
+  // to draw a frame over it; the default hands the whole screen to the camera.
+  let content: string;
+  showScanner(true);
+  try {
+    content = (await scan({ windowed: true, formats: [Format.QRCode] })).content;
+  } finally {
+    showScanner(false);
+  }
+  const hub = parseHub(content);
   if (!hub) {
     say("That QR code isn't an Agent Office link.", "error");
     return;
@@ -72,7 +124,11 @@ async function scanCode() {
 }
 
 $("scan").addEventListener("click", () => {
-  scanCode().catch((err) => say(`Scan failed: ${String(err)}`, "error"));
+  scanCode().catch((err) => {
+    // Cancelling rejects the scan too, and that is not a failure worth reporting.
+    const text = String(err);
+    if (!/cancel/i.test(text)) say(`Scan failed: ${text}`, "error");
+  });
 });
 
 $("manual").addEventListener("submit", (e) => {
