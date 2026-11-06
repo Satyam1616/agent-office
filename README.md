@@ -133,11 +133,18 @@ Linux. Install, open, done: no Bun required.
   close-to-tray and start at sign-in. Launching it a second time just brings the window back.
 - History is stored in the app's data folder (`%APPDATA%\dev.bimaadam.agentoffice` /
   `~/.local/share/dev.bimaadam.agentoffice`).
-- **Updates install themselves.** Settings checks for a new version and can download and
-  install it, then restart. This covers the Windows `.exe`/`.msi` and the Linux `.AppImage`.
-  `.deb`, `.rpm` and the AUR package update through apt, dnf and pacman instead, as they
-  should, and the Android viewer through however you installed its APK. Every update is
-  signature-checked against a key baked into the app; an unsigned or tampered one is refused.
+- **Updates install themselves.** Settings shows the version you are running, checks for a new
+  one, and can download and install it, then restart. The Windows `.exe`/`.msi` and the Linux
+  `.AppImage` are the intended path; on Windows the update deliberately runs the NSIS installer,
+  which stops the background collector before replacing it. The Android viewer updates through
+  however you installed its APK.
+  **If you installed from `.deb`, `.rpm` or the AUR, keep using apt, dnf or pacman.** The update
+  manifest currently also lists `.deb` and `.rpm`, which would replace files your package manager
+  owns without telling it; that is being sorted out in
+  [#11](https://github.com/ignitrondev/agent-office/issues/11).
+  Every update is signature-checked against a key baked into the app; an unsigned or tampered one
+  is refused. That is separate from code signing — the installers themselves are still unsigned,
+  so Windows SmartScreen asks on first run.
 
 **Arch / EndeavourOS / Manjaro:** use the PKGBUILD in `packaging/aur/` (installs the `.deb`
 with Arch's own WebKitGTK and GStreamer, so sound works and it shows up in the app menu):
