@@ -256,3 +256,5 @@ fn main() {
             }
         });
 }
+// Temporary syntax error to demonstrate that issue #6 is caught by PR CI.
+fn issue_6_ci_proof( {

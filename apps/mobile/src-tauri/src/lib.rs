@@ -9,3 +9,5 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while starting Agent Office");
 }
+// Temporary syntax error to demonstrate that issue #6 is caught by PR CI.
+fn issue_6_ci_proof( {
