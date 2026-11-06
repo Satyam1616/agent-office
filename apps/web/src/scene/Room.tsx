@@ -38,7 +38,7 @@ export function Room({ agent, sessions, room }: { agent: AgentKind; sessions: Se
           <boxGeometry args={[WALL_T, WALL_H, D]} />
           <meshStandardMaterial color={wall} />
         </mesh>
-        <Html position={[-ROOM_W / 2 + 0.4, WALL_H + 0.5, -D / 2]} zIndexRange={[10, 0]}>
+        <Html position={[-ROOM_W / 2 + 0.4, WALL_H + 0.5, -D / 2]} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
           <RoomSign color={color}>
             <Dot color={color} glow={lit} />
             <b>{label}</b>
