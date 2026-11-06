@@ -23,11 +23,17 @@ bun run typecheck   # all workspaces
 bun test
 ```
 
-CI runs exactly these two on every pull request, so a green local run means a green CI run. If you
-touched `apps/desktop/src-tauri` or `apps/mobile/src-tauri`, also check the Rust side:
+CI runs these checks plus `cargo check --locked` for both Rust crates on every pull request.
+The Rust jobs run on Linux with dependency caching; the mobile check covers the host build,
+while Android-specific compilation stays in the `Apps` release workflow. If you touched either
+Rust crate, prepare its configured frontend/resources and check it locally too:
 
 ```bash
-cd apps/desktop/src-tauri && cargo check
+bun run --filter @agent-office/desktop prepare-app
+cargo check --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+bun run --filter @agent-office/mobile build
+cargo check --locked --manifest-path apps/mobile/src-tauri/Cargo.toml
 ```
 
 Please keep pull requests to one concern, and say in the description what you did to verify the
