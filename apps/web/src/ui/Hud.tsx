@@ -29,7 +29,7 @@ import {
   Wrench20Regular,
   type FluentIcon,
 } from "@fluentui/react-icons";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { ACTIVITY_META, AGENT_META, AGENTS, clipText, type SessionState } from "../agents";
 import { ROLE_META, ROLES, roleFor, type Theme } from "../roles";
 import { useSettings } from "../settings";
@@ -39,22 +39,12 @@ import { ACTIVITY_ICON, AgvIcon, Ico, RoleLabel, SubagentIcon } from "./icons";
 import { Dot, fail, MachineName, mono, muted, panel } from "./labels";
 import { SettingsDialog } from "./Settings";
 import { Timeline } from "./Timeline";
+import { useIsPhone } from "./viewport";
 
 const timeAgo = (ts: number, now: number) => {
   const s = Math.max(0, Math.round((now - ts) / 1000));
   return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`;
 };
-
-const PHONE = "(max-width: 767px)";
-const useIsPhone = () =>
-  useSyncExternalStore(
-    (onChange) => {
-      const m = matchMedia(PHONE);
-      m.addEventListener("change", onChange);
-      return () => m.removeEventListener("change", onChange);
-    },
-    () => matchMedia(PHONE).matches,
-  );
 
 type Panel = "agents" | "feed";
 

@@ -17,6 +17,7 @@ import { QUALITY, useSettings, type NotifyLevel, type Quality } from "../setting
 import { sound } from "../sound";
 import { SharingSettings } from "./Sharing";
 import { UpdateSettings } from "./Updates";
+import { useIsPhone } from "./viewport";
 
 const QUALITY_HINT: Record<Quality, string> = {
   high: "Sharpest on HiDPI screens, full effects, always 60 fps.",
@@ -28,6 +29,7 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
   const { quality, notify, closeToTray, update } = useSettings();
   const [soundOn, setSoundOn] = useState(sound.enabled);
   const [autostart, setAuto] = useState(false);
+  const phone = useIsPhone();
   useEffect(() => sound.onChange(() => setSoundOn(sound.enabled)), []);
   useEffect(() => {
     if (open && isDesktop) void getAutostart().then(setAuto);
@@ -35,12 +37,12 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <Dialog open={open} onOpenChange={(_, d) => !d.open && onClose()}>
-      <DialogSurface className="max-w-[500px]">
+      <DialogSurface className="max-w-[min(500px,calc(100vw-2rem))]">
         <DialogBody>
           <DialogTitle>Settings</DialogTitle>
-          <DialogContent className="flex flex-col gap-4">
+          <DialogContent className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto md:max-h-[70vh]">
             <Field label="Graphics" hint={QUALITY_HINT[quality]}>
-              <RadioGroup layout="horizontal" value={quality} onChange={(_, d) => update({ quality: d.value as Quality })}>
+              <RadioGroup layout={phone ? "vertical" : "horizontal"} value={quality} onChange={(_, d) => update({ quality: d.value as Quality })}>
                 {(Object.keys(QUALITY) as Quality[]).map((q) => (
                   <Radio key={q} value={q} label={QUALITY[q].label} />
                 ))}
